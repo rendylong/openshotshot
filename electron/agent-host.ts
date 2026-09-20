@@ -46,7 +46,6 @@ import {
 } from "./pi-session-adapter";
 import { createPiExtensionUIBroker } from "./pi-extension-ui";
 import type { SkillRuntime } from "./skill-runtime";
-import type { ManagedProviderAccess } from "@/lib/agent/pi-provider-map";
 import { requestCanvasImage } from "./agent-canvas-image";
 import { extForMimeType, type LibraryAssetStore } from "./library-asset-store";
 
@@ -145,7 +144,7 @@ const EMPTY_SNAPSHOT: CanvasAgentSnapshot = {
     viewport: { x: 0, y: 0, k: 1 },
 };
 
-export function registerAgentHost(getWindow: () => BrowserWindow | null, skillRuntime: SkillRuntime, rendererUrl: string, managedAccess?: ManagedProviderAccess, libraryAssets?: import("./library-asset-store").LibraryAssetStore) {
+export function registerAgentHost(getWindow: () => BrowserWindow | null, skillRuntime: SkillRuntime, rendererUrl: string, libraryAssets?: import("./library-asset-store").LibraryAssetStore) {
     const sessionDir = join(APP_DATA_DIR, "agent-sessions");
     const agentDir = join(APP_DATA_DIR, "agent");
     const restoreAuthFetch = installChatGptAuthFetch((input, init) => net.fetch(input instanceof URL ? input.href : input, init));
@@ -226,7 +225,7 @@ export function registerAgentHost(getWindow: () => BrowserWindow | null, skillRu
     const unregisterChatGpt = registerChatGptIpc(getWindow, chatgpt, rendererUrl);
     const resolveModel = async (config: ResolvedTextModelConfig): Promise<Model<any>> => {
         if (config.source === "chatgpt" && !(await chatgpt.isReady())) throw new Error("chatgpt_auth_required");
-        const model = await resolveAgentModel(config, await ensureModelRuntime(), managedAccess);
+        const model = await resolveAgentModel(config, await ensureModelRuntime());
         if (config.source === "chatgpt" && !(await chatgpt.isReady())) throw new Error("chatgpt_auth_required");
         return model;
     };

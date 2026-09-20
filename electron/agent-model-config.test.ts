@@ -1,7 +1,5 @@
 import { expect, it, test, vi } from "vitest";
-import type { Model } from "@earendil-works/pi-ai";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import type { ResolvedTextModelConfig } from "@/lib/agent/pi-agent-types";
 import { parseAgentModelConfig, resolveAgentModel } from "./agent-model-config";
 test.each([{ source: "chatgpt", model: "gpt", apiKey: "sentinel" }, { source: "chatgpt", model: "gpt", baseUrl: "https://evil.test" }, { source: "unknown", model: "gpt" }])("rejects provider and credential injection", config => expect(() => parseAgentModelConfig(config)).toThrow());
 test("platform never falls back to API channels", async () => {
@@ -37,39 +35,4 @@ it("accepts OpenRouter and binds every destination and protocol field in the pro
 test("managed configs reject renderer capability flags", () => {
     expect(() => parseAgentModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true })).toThrow("invalid_agent_model_config");
     expect(() => parseAgentModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", inputModalities: ["text", "image"] })).toThrow("invalid_agent_model_config");
-});
-
-test("managed modalities re-resolve per idle call and replace the same stable provider when the catalog flips", async () => {
-    const registeredModels = new Map<string, Model<any>>();
-    const registeredProviderIds: string[] = [];
-    const runtime = {
-        getModel: (_provider: string, id: string) => registeredModels.get(id),
-        registerNativeProvider: vi.fn((provider: { id: string; getModels: () => Model<any>[] }) => {
-            registeredProviderIds.push(provider.id);
-            const model = provider.getModels()[0]!;
-            registeredModels.set(model.id, model);
-        }),
-    } as unknown as ModelRuntime;
-    let inputModalities: Array<"text" | "image"> = ["text"];
-    const managedAccess = {
-        baseUrl: "https://gateway.example",
-        resolveApiKey: async () => "managed-secret",
-        resolveTextModelDescriptor: async () => ({ inputModalities }),
-    };
-    const config: ResolvedTextModelConfig = { credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions" };
-
-    const textOnly = await resolveAgentModel(config, runtime, managedAccess);
-    expect(textOnly.input).toEqual(["text"]);
-
-    inputModalities = ["text", "image"];
-    const multimodal = await resolveAgentModel(config, runtime, managedAccess);
-    expect(multimodal.input).toEqual(["text", "image"]);
-    expect(multimodal.provider).toBe(textOnly.provider);
-
-    inputModalities = ["text"];
-    const backToText = await resolveAgentModel(config, runtime, managedAccess);
-    expect(backToText.input).toEqual(["text"]);
-
-    // 同一稳定 provider id 原地替换三次，绝不派生自能力的临时 id。
-    expect(registeredProviderIds).toEqual(["shotshot-cloud", "shotshot-cloud", "shotshot-cloud"]);
 });

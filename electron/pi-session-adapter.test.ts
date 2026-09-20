@@ -11,9 +11,7 @@ import {
     type ModelRuntime,
     type SessionManager,
 } from "@earendil-works/pi-coding-agent";
-import type { Model } from "@earendil-works/pi-ai";
 import { buildModelsFromConfig } from "@/lib/agent/pi-provider-map";
-import { resolveAgentModel } from "./agent-model-config";
 import type { BrowserWindow } from "electron";
 
 import {
@@ -424,66 +422,6 @@ describe("SessionRuntimeRegistry routing", () => {
             "canvas_get_state",
         ]);
         expect(item.runtimeState.tools).toEqual(allTools.slice(0, 1));
-    });
-
-    it("refreshes managed view_image only at idle boundaries while busy turns keep their captured tools", async () => {
-        const managedConfig: ResolvedTextModelConfig = {
-            credentialMode: "shotshot",
-            model: "minimax-m3",
-            apiFormat: "openai",
-            agentApiMode: "chat_completions",
-        };
-        let inputModalities: Array<"text" | "image"> = ["text"];
-        const registeredModels = new Map<string, Model<any>>();
-        const stubRuntime = {
-            getModel: (_provider: string, id: string) => registeredModels.get(id),
-            registerNativeProvider: (provider: { id: string; getModels: () => Model<any>[] }) => {
-                const model = provider.getModels()[0]!;
-                registeredModels.set(model.id, model);
-            },
-        } as unknown as ModelRuntime;
-        const harness = await createHarness({
-            resolveModel: (config) => {
-                if (config.credentialMode !== "shotshot") throw new Error("unexpected model source");
-                return resolveAgentModel(config, stubRuntime, {
-                    baseUrl: "https://gateway.example",
-                    resolveApiKey: async () => "main-process-secret",
-                    resolveTextModelDescriptor: async () => ({ inputModalities }),
-                });
-            },
-        });
-        const created = await harness.registry.createSession({ scope: { projectId: "p", canvasId: "a" } });
-        const item = harness.registry.get(created.sessionId)!;
-        const allTools = [
-            { name: "canvas_get_state", label: "Canvas State" },
-            { name: "view_image", label: "View Image" },
-        ];
-        item.runtimeState.tools = allTools.slice(0, 1);
-        item.runtimeState.allTools = allTools;
-
-        await harness.registry.setModelConfig(managedConfig);
-        await expect(harness.registry.prompt(created.sessionId, "text turn")).resolves.toEqual({ ok: true });
-        expect(harness.sessions[0]!.model?.input).toEqual(["text"]);
-        expect(item.session.getActiveToolNames()).not.toContain("view_image");
-
-        inputModalities = ["text", "image"];
-        await harness.registry.setModelConfig({ ...managedConfig });
-        await expect(harness.registry.prompt(created.sessionId, "inspect image")).resolves.toEqual({ ok: true });
-        expect(harness.sessions[0]!.model?.input).toEqual(["text", "image"]);
-        expect(item.session.getActiveToolNames()).toContain("view_image");
-        expect(item.runtimeState.tools.map((tool) => tool.name)).toContain("view_image");
-
-        inputModalities = ["text"];
-        Object.assign(item.session, { isStreaming: true });
-        await harness.registry.setModelConfig({ ...managedConfig });
-        await expect(harness.registry.prompt(created.sessionId, "queued turn")).resolves.toEqual({ ok: true });
-        expect(item.session.getActiveToolNames()).toContain("view_image");
-        expect(item.runtimeState.tools.map((tool) => tool.name)).toContain("view_image");
-
-        Object.assign(item.session, { isStreaming: false });
-        await expect(harness.registry.prompt(created.sessionId, "next text turn")).resolves.toEqual({ ok: true });
-        expect(item.session.getActiveToolNames()).not.toContain("view_image");
-        expect(item.runtimeState.tools.map((tool) => tool.name)).not.toContain("view_image");
     });
 
     it("switches subscription image capability only at idle model boundaries", async () => {

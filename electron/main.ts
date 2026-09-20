@@ -1,28 +1,20 @@
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, session, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import { mkdir } from "node:fs/promises";
 import os from "node:os";
 import { pathToFileURL } from "node:url";
 import { join, resolve } from "node:path";
 
 import type { MainFetchError, MainFetchRequest } from "@/lib/agent/pi-agent-types";
-import { registerAccountIpc } from "./account-ipc";
 import { FETCH_CHANNEL, FETCH_ABORT_CHANNEL, registerAgentHost } from "./agent-host";
 import { AGENT_SESSIONS_DIR, APP_SKILLS_DIR } from "./app-data-paths";
 import { createAppReleaseController } from "./app-release-controller";
 import { registerAppReleaseIpc } from "./app-release-ipc";
-import { DesktopAuthCallbackRouter, registerDesktopAuthDeepLinks } from "./auth-deep-link";
-import { AuthController } from "./auth-controller";
-import { createAuthSessionStore } from "./auth-session-store";
-import { loadShotshotCloudConfig } from "./cloud-config";
 import { createFetchRequestRegistry } from "./fetch-proxy";
-import { ManagedModelClient } from "./managed-model-client";
-import { registerManagedModelIpc } from "./managed-model-ipc";
 import { registerProjectAssetIpc } from "./project-asset-ipc";
 import { createProjectAssetStore, type ProjectAssetStore } from "./project-asset-store";
 import { registerLibraryAssetIpc } from "./library-asset-ipc";
 import { createLibraryAssetStore, type LibraryAssetStore } from "./library-asset-store";
 import { registerProjectWorkspaceIpc } from "./project-workspace";
-import { ShotshotCloudClient } from "./shotshot-cloud-client";
 import { createSkillRuntime } from "./skill-runtime";
 import { initializeAppSkills } from "./skill-startup";
 import { createAppSkillsFs, registerSkillsHandler } from "./skills";
@@ -31,20 +23,14 @@ import { isAllowedExternalUrl, isTrustedRendererNavigation } from "./window-secu
 
 const isDev = !app.isPackaged;
 const devRendererUrl = process.env.SHOTSHOT_RENDERER_URL || "http://localhost:3000";
-const cloudConfig = loadShotshotCloudConfig(process.env, { development: isDev });
 const productionRendererEntry = resolve(__dirname, "../../web/dist/index.html");
 const productionRendererUrl = pathToFileURL(productionRendererEntry).toString();
-const externalOrigins = new Set([cloudConfig.webOrigin, "https://github.com"]);
+const externalOrigins = new Set(["https://github.com"]);
 
 let mainWindow: BrowserWindow | null = null;
-let authController: AuthController | null = null;
-let disposeAccountIpc: (() => void) | null = null;
-let disposeManagedModelIpc: (() => void) | null = null;
 let disposeProjectAssetIpc: (() => void) | null = null;
 let disposeAppReleaseIpc: (() => void) | null = null;
 let appReleaseController: ReturnType<typeof createAppReleaseController> | null = null;
-let disposeManagedAuthSubscription: (() => void) | null = null;
-let managedModelClient: ManagedModelClient | null = null;
 let projectAssetStore: ProjectAssetStore | null = null;
 let libraryAssetStore: LibraryAssetStore | null = null;
 let disposeLibraryAssetIpc: (() => void) | null = null;
@@ -137,61 +123,11 @@ function createWindow() {
     return win;
 }
 
-function focusMainWindow() {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-}
-
 function startPrimaryInstance() {
     app.whenReady().then(async () => {
         // 仅放行 fullscreen：原生 <video> 全屏按钮依赖该权限，其余权限继续拒绝。
         session.defaultSession.setPermissionCheckHandler((_webContents, permission) => permission === "fullscreen");
         session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => callback(permission === "fullscreen"));
-        if (app.isPackaged) app.setAsDefaultProtocolClient("ai.shotshot.desktop");
-
-        const authSessionStore = createAuthSessionStore(
-            join(app.getPath("userData"), "shotshot-auth-session.json"),
-            safeStorage,
-        );
-        const cloud = new ShotshotCloudClient({ baseUrl: cloudConfig.cloudOrigin, sessionStore: authSessionStore });
-        managedModelClient = cloudConfig.gatewayOrigin ? new ManagedModelClient({
-            gatewayOrigin: cloudConfig.gatewayOrigin,
-            cloud,
-            temporaryDirectory: join(app.getPath("userData"), "managed-media"),
-            allowLocalHttp: isDev,
-        }) : null;
-        authController = new AuthController({
-            cloud,
-            callbacks: desktopAuthCallbacks,
-            openExternal: async (url) => {
-                if (!isAllowedExternalUrl(url, new Set([cloudConfig.webOrigin]), { allowLocalHttp: isDev })) {
-                    throw new Error("untrusted_external_url");
-                }
-                await shell.openExternal(url);
-            },
-            device: { name: os.hostname(), platform: process.platform },
-            webOrigin: cloudConfig.webOrigin,
-        });
-        disposeAccountIpc = registerAccountIpc({
-            ipcMain,
-            controller: authController,
-            isTrustedSender: (sender) => isTrustedTaskCountSender(sender, appWindows),
-            recipients: () => [...appWindows.values()].map((win) => win.webContents),
-            referralInfo: async () => {
-                const info = await cloud.getReferralInfo();
-                return { ...info, shareUrl: new URL(`/i/${info.code}`, cloudConfig.webOrigin).toString() };
-            },
-        });
-        disposeManagedModelIpc = registerManagedModelIpc({
-            ipcMain,
-            client: managedModelClient,
-            isTrustedSender: (sender) => isTrustedTaskCountSender(sender, appWindows),
-        });
-        disposeManagedAuthSubscription = authController.subscribe((state) => {
-            if (state.state === "signed-out") void managedModelClient?.dispose();
-        });
-        if (cloudConfig.accountEnabled) await authController.restore();
 
         const appSkills = createAppSkillsFs(skillRuntime);
         const initialized = await initializeAppSkills(appSkills, skillRuntime);
@@ -211,13 +147,6 @@ function startPrimaryInstance() {
             () => mainWindow,
             skillRuntime,
             isDev ? devRendererUrl : pathToFileURL(resolve(__dirname, "../../web/dist/index.html")).href,
-            managedModelClient && cloudConfig.gatewayOrigin
-                ? {
-                    baseUrl: cloudConfig.gatewayOrigin,
-                    resolveApiKey: (model) => managedModelClient!.resolveApiKeyForTextModel(model),
-                    resolveTextModelDescriptor: (model) => managedModelClient!.resolveTextModelDescriptor(model),
-                }
-                : undefined,
             libraryAssetStore ?? undefined,
         );
         registerSkillsHandler(() => mainWindow, skillRuntime, appSkills);
@@ -258,7 +187,7 @@ function startPrimaryInstance() {
         createWindow();
 
         appReleaseController = createAppReleaseController({
-            baseUrl: cloudConfig.cloudOrigin,
+            baseUrl: "https://api.shotshot.ai",
             localVersion: app.getVersion(),
             packaged: app.isPackaged,
             openExternal: (url) => shell.openExternal(url),
@@ -289,14 +218,6 @@ function startPrimaryInstance() {
         ipcMain.removeHandler(FETCH_CHANNEL);
         ipcMain.removeHandler(FETCH_ABORT_CHANNEL);
         fetchRequests.dispose();
-        disposeManagedAuthSubscription?.();
-        disposeManagedAuthSubscription = null;
-        disposeManagedModelIpc?.();
-        disposeManagedModelIpc = null;
-        void managedModelClient?.dispose();
-        managedModelClient = null;
-        disposeAccountIpc?.();
-        disposeAccountIpc = null;
         disposeProjectAssetIpc?.();
         disposeProjectAssetIpc = null;
         disposeLibraryAssetIpc?.();
@@ -308,13 +229,7 @@ function startPrimaryInstance() {
         appReleaseController = null;
         void projectAssetStore?.close();
         projectAssetStore = null;
-        authController?.dispose();
-        authController = null;
     });
 }
 
-const desktopAuthCallbacks = new DesktopAuthCallbackRouter();
-const isPrimaryInstance = registerDesktopAuthDeepLinks(app, desktopAuthCallbacks, process.argv, focusMainWindow);
-if (isPrimaryInstance) {
-    startPrimaryInstance();
-}
+startPrimaryInstance();

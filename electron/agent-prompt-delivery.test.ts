@@ -76,29 +76,26 @@ it("delivers refreshed host instructions to the provider after session restore a
     }
 });
 
-it("delivers view_image and the typed image block for a multimodal managed model without leaking image bytes into diagnostics", async () => {
-    const root = await mkdtemp(join(tmpdir(), "shotshot-managed-delivery-"));
-    // faux 只充当网关传输层；能力身份（input 数组）来自真实托管解析链路。
-    const faux = fauxProvider({ provider: "shotshot-cloud" });
+it("delivers view_image and the typed image block for a multimodal BYOK model without leaking image bytes into diagnostics", async () => {
+    const root = await mkdtemp(join(tmpdir(), "shotshot-byok-delivery-"));
+    // faux 只充当传输层；能力身份（input 数组）来自真实 BYOK 解析链路。
     const requests: Context[] = [];
     const capture = (context: Context) => requests.push({ ...context, messages: structuredClone(context.messages) });
     const modelRuntime = await ModelRuntime.create({ authPath: join(root, "auth.json"), modelsPath: join(root, "models.json"), refreshOnCreate: false });
+    const settingsManager = SettingsManager.inMemory();
+    const stubRuntime = { getModel: () => undefined, registerNativeProvider: () => undefined } as unknown as ModelRuntimeType;
+    const byokConfig = { model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai" as const, agentApiMode: "chat_completions" as const, supportsImageInput: true };
+    const byokModel = await resolveAgentModel(byokConfig, stubRuntime);
+    const faux = fauxProvider({ provider: byokModel.provider });
     modelRuntime.registerNativeProvider(faux.provider);
     await modelRuntime.refresh({ allowNetwork: false });
-    const settingsManager = SettingsManager.inMemory();
-    const managedAccess = {
-        baseUrl: "https://gateway.example",
-        resolveApiKey: async () => "main-process-secret",
-        resolveTextModelDescriptor: async () => ({ inputModalities: ["text", "image"] as Array<"text" | "image"> }),
-    };
-    const stubRuntime = { getModel: () => undefined, registerNativeProvider: () => undefined } as unknown as ModelRuntimeType;
     const logSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const registry = createSessionRuntimeRegistry({
         sessionDir: root,
         getWindow: () => null,
         resolveModel: async (config) => {
-            const managed = await resolveAgentModel(config, stubRuntime, managedAccess);
-            return { ...managed, api: faux.getModel()!.api };
+            const resolved = await resolveAgentModel(config, stubRuntime);
+            return { ...resolved, api: faux.getModel()!.api };
         },
         skillRuntime: { agentSnapshot: async () => ({ ok: true, revision: 1, systemPromptBlock: "", availableSkillNames: [] }) } as unknown as SkillRuntime,
         createRuntime: async ({ cwd, agentDir, sessionManager, model, runtimeState }) => {
@@ -124,7 +121,7 @@ it("delivers view_image and the typed image block for a multimodal managed model
         },
     });
     try {
-        await registry.setModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions" });
+        await registry.setModelConfig({ model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true });
         const { sessionId } = await registry.createSession({ scope: { projectId: "p", canvasId: "c" } });
         faux.setResponses([
             (context) => { capture(context); return fauxAssistantMessage(fauxToolCall("view_image", { nodeId: "fixture" }), { stopReason: "toolUse" }); },
