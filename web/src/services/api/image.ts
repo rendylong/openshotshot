@@ -9,7 +9,6 @@ import { providerModelsUrl } from "@/services/api/provider-endpoints";
 import { buildApiUrl, modelProviderOf, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
 import { requestChatCompletion } from "./chat-completions";
 import { generateResolvedMedia } from "./media-dispatcher";
-import { requestModel } from "./model-transport";
 import { runModelPlugin } from "./model-plugin";
 export { normalizePluginImages } from "./model-plugin";
 import { nanoid } from "nanoid";
@@ -748,15 +747,9 @@ export async function requestOpenAIImages(
                 ...(background ? { background } : {}),
                 response_format: "b64_json",
             };
-            const data = await requestModel<ImageApiResponse>({
-                config,
-                timeoutClass: "image",
-                path: "/v1/images/generations",
-                body,
-                responseType: "json",
-                signal: options?.signal,
-                byok: () => axios.post<ImageApiResponse>(aiApiUrl(config, "/images/generations"), body, { headers: aiHeaders(config, "application/json"), signal: options?.signal }),
-            });
+            const data = (
+                await axios.post<ImageApiResponse>(aiApiUrl(config, "/images/generations"), body, { headers: aiHeaders(config, "application/json"), signal: options?.signal })
+            ).data;
             return parseImagePayload(data);
         }
 
@@ -771,15 +764,9 @@ export async function requestOpenAIImages(
         const files = await Promise.all(references.map(async (image) => dataUrlToFile({ ...image, dataUrl: await imageToDataUrl(image) })));
         files.forEach((file) => formData.append("image", file));
         if (mask) formData.set("mask", dataUrlToFile(mask));
-        const data = await requestModel<ImageApiResponse>({
-            config,
-            timeoutClass: "image",
-            path: "/v1/images/edits",
-            body: formData,
-            responseType: "json",
-            signal: options?.signal,
-            byok: () => axios.post<ImageApiResponse>(aiApiUrl(config, "/images/edits"), formData, { headers: aiHeaders(config), signal: options?.signal }),
-        });
+        const data = (
+            await axios.post<ImageApiResponse>(aiApiUrl(config, "/images/edits"), formData, { headers: aiHeaders(config), signal: options?.signal })
+        ).data;
         return parseImagePayload(data);
     } catch (error) {
         throw new Error(readAxiosError(error, apiText("requestFailed")));

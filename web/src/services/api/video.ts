@@ -12,7 +12,6 @@ import { imageToDataUrl } from "@/services/image-storage";
 import { boolConfig, buildApiUrl, modelOptionName, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
 import { generateResolvedMedia } from "./media-dispatcher";
 import { runModelPlugin } from "./model-plugin";
-import { requestModel } from "./model-transport";
 import type { ReferenceImage } from "@/types/image";
 
 type VideoResponse = { id: string; status?: string; error?: { message?: string }; url?: string; result_url?: string; video_url?: string; content?: { video_url?: string; url?: string } | null };
@@ -159,15 +158,9 @@ export async function createOpenAIVideoTask(config: AiConfig, model: string, pro
     const files = await Promise.all(references.slice(0, 7).map(async (image) => dataUrlToFile({ ...image, dataUrl: await imageToDataUrl(image) })));
     files.forEach((file) => body.append("input_reference[]", file));
     try {
-        const data = await requestModel<ApiVideoResponse>({
-            config,
-            timeoutClass: "video",
-            path: "/v1/videos",
-            body,
-            responseType: "json",
-            signal: options?.signal,
-            byok: () => axios.post<ApiVideoResponse>(aiApiUrl(config, "/videos"), body, { headers: aiHeaders(config), signal: options?.signal }),
-        });
+        const data = (
+            await axios.post<ApiVideoResponse>(aiApiUrl(config, "/videos"), body, { headers: aiHeaders(config), signal: options?.signal })
+        ).data;
         const created = unwrapVideoResponse(data);
         if (!created.id) throw new Error(apiText("noVideoTaskId"));
         return { id: created.id, provider: "openai", model };
@@ -179,28 +172,16 @@ export async function createOpenAIVideoTask(config: AiConfig, model: string, pro
 export async function pollOpenAIVideoTask(config: AiConfig, task: VideoGenerationTask, options?: RequestOptions): Promise<VideoGenerationTaskState> {
     assertOpenAIVideoConfig(config, task.model);
     try {
-        const data = await requestModel<ApiVideoResponse>({
-            config,
-            timeoutClass: "video",
-            path: `/v1/videos/${task.id}`,
-            method: "GET",
-            responseType: "json",
-            signal: options?.signal,
-            byok: () => axios.get<ApiVideoResponse>(aiApiUrl(config, `/videos/${task.id}`), { headers: aiHeaders(config), signal: options?.signal }),
-        });
+        const data = (
+            await axios.get<ApiVideoResponse>(aiApiUrl(config, `/videos/${task.id}`), { headers: aiHeaders(config), signal: options?.signal })
+        ).data;
         const video = unwrapVideoResponse(data);
         const url = videoResultUrl(video);
         if (url) return { status: "completed", result: await videoResultFromUrl(url, options) };
         if (video.status === "completed") {
-            const content = await requestModel<Blob>({
-                config,
-                timeoutClass: "video",
-                path: `/v1/videos/${task.id}/content`,
-                method: "GET",
-                responseType: "blob",
-                signal: options?.signal,
-                byok: () => axios.get<Blob>(aiApiUrl(config, `/videos/${task.id}/content`), { headers: aiHeaders(config), responseType: "blob", signal: options?.signal }),
-            });
+            const content = (
+                await axios.get<Blob>(aiApiUrl(config, `/videos/${task.id}/content`), { headers: aiHeaders(config), responseType: "blob", signal: options?.signal })
+            ).data;
             await assertVideoBlob(content);
             return { status: "completed", result: { blob: content } };
         }

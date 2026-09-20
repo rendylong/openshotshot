@@ -23,7 +23,7 @@ import type { CanvasConnection, CanvasNodeData } from "@/types/canvas";
  */
 
 const generateNodeSpy = vi.fn(async (_nodeId: string, _mode: string, _prompt: string) => {});
-const generateStoryboardSpy = vi.fn((_scriptNodeId: string, _shotId: string, _settings: { metadata: Record<string, unknown>; managedImageModel?: string }) => {});
+const generateStoryboardSpy = vi.fn((_scriptNodeId: string, _shotId: string, _settings: { metadata: Record<string, unknown> }) => {});
 
 const makeEntity = (id: string, projectId: string): ScriptEntity => ({
     id,
@@ -68,7 +68,7 @@ function Harness() {
     const nodesRef = useRef(nodes);
     const connectionsRef = useRef(connections);
     const generateNodeRef = useRef<((nodeId: string, mode: "text" | "image" | "video" | "audio", prompt: string) => Promise<void>) | null>(null);
-    const generateStoryboardRef = useRef<((scriptNodeId: string, shotId: string, settings: { metadata: Record<string, unknown>; managedImageModel?: string }) => void) | null>(null);
+    const generateStoryboardRef = useRef<((scriptNodeId: string, shotId: string, settings: { metadata: Record<string, unknown> }) => void) | null>(null);
 
     useAgentBridge({
         projectId: "p1",

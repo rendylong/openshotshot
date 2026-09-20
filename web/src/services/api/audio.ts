@@ -8,7 +8,6 @@ import { uploadMediaFile, uploadRemoteMediaFile, type RemoteMediaStorageContext,
 import { storeCanvasMedia, type ProjectAssetWriteContext, type StoredCanvasMedia } from "@/services/project-asset-storage";
 import { buildApiUrl, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
 import { generateResolvedMedia } from "./media-dispatcher";
-import { requestModel } from "./model-transport";
 
 type RequestOptions = { signal?: AbortSignal };
 const apiText = (key: string, options?: Record<string, unknown>) => i18n.t(`apiErrors.${key}`, options);
@@ -70,15 +69,9 @@ export async function requestOpenAISpeech(config: AiConfig, prompt: string, voic
             speed,
             ...(instructions ? { instructions } : {}),
         };
-        const audio = await requestModel<Blob>({
-            config,
-            timeoutClass: "audio",
-            path: "/v1/audio/speech",
-            body,
-            responseType: "blob",
-            signal,
-            byok: () => axios.post<Blob>(aiApiUrl(config, "/audio/speech"), body, { headers: aiHeaders(config), responseType: "blob", signal }),
-        });
+        const audio = (
+            await axios.post<Blob>(aiApiUrl(config, "/audio/speech"), body, { headers: aiHeaders(config), responseType: "blob", signal })
+        ).data;
         await assertAudioBlob(audio);
         return audio.type.startsWith("audio/") ? audio : new Blob([audio], { type: audioMimeType(format) });
     } catch (error) {
