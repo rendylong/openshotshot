@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { UNCATEGORIZED_PROJECT_ID } from "@/lib/canvas/category";
-import type { AccountBridge } from "@/lib/desktop/account-bridge";
 import { addCanvasToProject, createProjectWithCanvas, renameCanvasInProject, updateCanvasInProject } from "@/lib/canvas/project-model";
 import type { PiSessionStatus, PiSessionSummary } from "@/lib/agent/pi-agent-types";
 import i18n from "@/i18n";
@@ -62,12 +61,6 @@ vi.mock("@/components/layout/settings-popover", () => ({
         <button type="button" aria-haspopup="menu" aria-label="设置" onClick={() => onOpenChange?.(true)}>
             设置
         </button>
-    ),
-}));
-
-vi.mock("@/components/layout/user-menu-button", () => ({
-    UserMenuButton: ({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) => (
-        <button type="button" aria-haspopup="menu" aria-label="账户" onClick={() => onOpenChange?.(true)}>账户</button>
     ),
 }));
 
@@ -317,16 +310,7 @@ describe("AppSidebar", () => {
         expect(screen.getByRole("link", { name: "C2" })).toHaveClass("!text-stone-950", "dark:!text-stone-50");
     });
 
-    test("renders the user entry instead of settings on desktop", () => {
-        window.shotshot = { account: {} as AccountBridge, agent: {} as never, skills: {} as never, platform: "darwin" };
-        const { container } = renderSidebar();
-        // footer 入口只在展开态渲染，先展开侧栏（同「does not collapse while the settings menu is active」）
-        fireEvent.mouseEnter(sidebarElement(container));
-        expect(screen.getByRole("button", { name: "账户" })).toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "设置" })).not.toBeInTheDocument();
-    });
-
-    test("keeps the settings entry on the web without the bridge", () => {
+    test("keeps the settings entry in the footer", () => {
         const { container } = renderSidebar();
         fireEvent.mouseEnter(sidebarElement(container));
         expect(screen.getByRole("button", { name: "设置" })).toBeInTheDocument();
@@ -448,7 +432,7 @@ describe("AppSidebar", () => {
         }
     });
 
-    test("keeps the account/settings entry in the footer while collapsed", () => {
+    test("keeps the settings entry in the footer while collapsed", () => {
         renderSidebar();
         // 底栏不再有折叠按钮，账号/设置入口是唯一内容（折叠态由各自组件收成图标）
         expect(screen.queryByRole("button", { name: "折叠侧栏" })).not.toBeInTheDocument();

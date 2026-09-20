@@ -2,7 +2,7 @@ import { prepareReferenceImages, hasReferenceMask } from "../reference-image-pre
 import axios, { type AxiosRequestConfig } from "axios";
 
 import i18n from "@/i18n";
-import { buildApiUrl, credentialModeFor, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
+import { buildApiUrl, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
 
 type RequestOptions = { signal?: AbortSignal };
 
@@ -132,7 +132,6 @@ async function runPluginWithLocals<T>(args: Pick<RunPluginArgs, "script" | "conf
 }
 
 export async function runModelPlugin<T = unknown>(args: RunPluginArgs): Promise<T> {
-    if (credentialModeFor(args.config, args.capability) === "shotshot") throw new Error("managed_scripts_unsupported");
     const { config } = args;
     const baseUrl = config.baseUrl.trim().replace(/\/+$/, "");
     const images = await prepareReferenceImages(config, args.images || [], { signal: args.signal, preserveOriginal: hasReferenceMask(args.params) });

@@ -5,12 +5,6 @@ import { Link, MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const projectStorage = vi.hoisted(() => ({ getItem: vi.fn(), setItem: vi.fn(), removeItem: vi.fn() }));
-const catalogStore = vi.hoisted(() => ({ read: vi.fn<() => Promise<unknown>>(async () => null) }));
-vi.mock("@/lib/desktop/managed-catalog-store", () => ({
-    readManagedCatalogRecord: catalogStore.read,
-    writeManagedCatalogRecord: vi.fn(async () => undefined),
-    clearManagedCatalogRecord: vi.fn(async () => undefined),
-}));
 const navigationControl = vi.hoisted(() => ({
     rejectNext: false,
     beforeReject: null as null | (() => void),
@@ -37,7 +31,6 @@ vi.mock("react-router-dom", async (importOriginal) => {
 import i18n from "@/i18n";
 import { UNCATEGORIZED_PROJECT_ID } from "@/lib/canvas/category";
 import { createProjectWithCanvas } from "@/lib/canvas/project-model";
-import { resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import HomePage from "@/pages/home";
 import { defaultConfig, useConfigStore } from "@/stores/use-config-store";
 import { useProjectStore } from "@/stores/canvas/use-project-store";
@@ -77,7 +70,6 @@ describe("home creation flow", () => {
         useAiSourceStore.setState({ status: "ready", applying: false, error: null, preferences: { version: 1, selections: {} } });
         useChatGptStore.setState({ status: { state: "signed-out" }, models: [] });
         useConfigStore.setState({ config: defaultConfig });
-        resetManagedCatalogForTests();
         await i18n.changeLanguage("zh-CN");
     });
 
@@ -225,47 +217,5 @@ describe("home creation flow", () => {
     it("contains none of the forbidden helper or demo copy", () => {
         renderFlow();
         for (const text of ["已填入", "替换原内容", "确认替换", "演示", "一键生成"]) expect(screen.queryByText(text, { exact: false })).toBeNull();
-    });
-});
-
-const shotshotConfig = { ...defaultConfig, credentialModes: { ...defaultConfig.credentialModes, agent: "shotshot" as const } };
-
-describe("home managed catalog warning", () => {
-    beforeEach(async () => {
-        vi.clearAllMocks();
-        navigationControl.rejectNext = false;
-        navigationControl.beforeReject = null;
-        projectStorage.setItem.mockResolvedValue(undefined);
-        useHomeComposerStore.getState().resetDraft();
-        useProjectStore.setState({ hydrated: true, hydrationStatus: "success", projects: [], pendingPrompt: null, pendingProjectId: null, pendingCanvasId: null });
-        useAgentStore.getState().setAgentState({ pendingAttachments: [], submitRequest: null });
-        useLocalSkillStore.setState({ loaded: true, skills: [] });
-        await i18n.changeLanguage("zh-CN");
-        resetManagedCatalogForTests();
-        catalogStore.read.mockReset();
-        catalogStore.read.mockResolvedValue(null);
-        useConfigStore.setState({ config: defaultConfig });
-        useAiSourceStore.setState({ status: "ready", applying: false, error: null, preferences: { version: 1, selections: {} } });
-        useChatGptStore.setState({ status: { state: "signed-out" }, models: [] });
-    });
-
-    it("stays quiet while the managed catalog is still loading", () => {
-        useConfigStore.setState({ config: shotshotConfig });
-        catalogStore.read.mockReturnValueOnce(new Promise(() => undefined));
-        renderFlow();
-        expect(screen.queryByText(i18n.t("composer.configBlocked"))).toBeNull();
-    });
-
-    it("clears the warning immediately from a persisted stale catalog", () => {
-        useConfigStore.setState({ config: shotshotConfig });
-        catalogStore.read.mockResolvedValueOnce({ version: 1, subjectId: "user-1", fetchedAt: Date.now() - 10 * 60_000, models: [{ id: "m-text", name: "M", capability: "text", execution: "direct" }] });
-        renderFlow();
-        expect(screen.queryByText(i18n.t("composer.configBlocked"))).toBeNull();
-    });
-
-    it("reports fetch failure when there is no cache and the catalog cannot load", async () => {
-        useConfigStore.setState({ config: shotshotConfig });
-        renderFlow();
-        await screen.findByText(i18n.t("config.managed.fetchFailed"));
     });
 });

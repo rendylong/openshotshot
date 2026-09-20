@@ -1,7 +1,6 @@
 import axios from "axios";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { planCanvasMediaGeneration } from "@/lib/canvas/canvas-media-generation-route";
 import { resolveModel } from "@/lib/models/model-resolver";
 import { createModelChannel, defaultConfig, encodeChannelModel, modelOptionsFromChannels, type AiConfig, type ModelCapability } from "@/stores/use-config-store";
@@ -38,7 +37,6 @@ function mediaConfig(baseUrl: string, model: string, capability: ModelCapability
 afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
-    resetManagedCatalogForTests();
 });
 
 describe("resolved media dispatcher", () => {
@@ -48,84 +46,6 @@ describe("resolved media dispatcher", () => {
         expect(planCanvasMediaGeneration({ config, capability: modality, phase: "first" })).toMatchObject({ mode: "remote_task", adapterId: `fal.${modality}`, adapterVersion: 1 });
         await expect(generateResolvedMedia({ config, modality, prompt: "cup" })).rejects.toThrow(/requires a persistent remote task|需要通过持久化远端任务运行/);
         expect(fetcher).not.toHaveBeenCalled();
-    });
-    test("uses only the managed catalog and ignores persisted BYOK scripts in Shotshot mode", async () => {
-        const byokRequest = vi.spyOn(axios, "request");
-        const byokPost = vi.spyOn(axios, "post");
-        const fetch = vi.fn(async (request) => ({
-            id: request.id,
-            status: 200,
-            statusText: "OK",
-            headers: { "content-type": "application/json" },
-            body: { kind: "text" as const, value: '{"data":[{"b64_json":"bWFuYWdlZA=="}]}' },
-        }));
-        window.shotshot = {
-            agent: {} as never,
-            skills: {} as never,
-            platform: "darwin",
-            managedModels: {
-                listModels: vi.fn(async () => [{ id: "managed-image", name: "Managed Image", capability: "image" as const, execution: "direct" as const }]),
-                fetch,
-                abort: vi.fn(),
-            },
-        };
-        const byok = mediaConfig("https://api.openai.com", "gpt-image-2", "image", { apiKey: "private-key", script: 'throw new Error("must not run");' });
-        const config = { ...byok, credentialMode: "shotshot" as const, credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const, managedModels: { ...byok.managedModels, image: "managed-image" } };
-
-        await expect(generateResolvedMedia({ config, modality: "image", prompt: "cat" })).resolves.toEqual({ kind: "image", sources: ["data:image/png;base64,bWFuYWdlZA=="] });
-        expect(byokRequest).not.toHaveBeenCalled();
-        expect(byokPost).not.toHaveBeenCalled();
-        expect(fetch).toHaveBeenCalledOnce();
-    });
-
-    test("rejects managed plugin-host execution before any script runs", () => {
-        const config = { ...mediaConfig("https://api.openai.com", "sora-2", "video"), credentialMode: "shotshot" as const, credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const, managedModels: { ...defaultConfig.managedModels, video: "managed-video" } };
-        expect(() => planCanvasMediaGeneration({ config, capability: "video", phase: "first", pluginHost: true })).toThrow("managed_scripts_unsupported");
-    });
-    test("selects the managed image remote-task adapter for a remote_task catalog model", async () => {
-        const request = vi.spyOn(axios, "request");
-        const post = vi.spyOn(axios, "post");
-        window.shotshot = {
-            agent: {} as never,
-            skills: {} as never,
-            platform: "darwin",
-            managedModels: {
-                listModels: vi.fn(async () => [{ id: "gpt-image-2", name: "GPT Image 2", capability: "image" as const, execution: "remote_task" as const }]),
-                fetch: vi.fn(),
-                abort: vi.fn(),
-            },
-        };
-        const byok = mediaConfig("https://api.openai.com", "gpt-image-2", "image");
-        const config = { ...byok, credentialMode: "shotshot" as const, credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const, managedModels: { ...byok.managedModels, image: "gpt-image-2" } };
-
-        await expect(generateResolvedMedia({ config, modality: "image", prompt: "cat" }))
-            .rejects.toThrow(/requires a persistent remote task|需要通过持久化远端任务运行/);
-        expect(request).not.toHaveBeenCalled();
-        expect(post).not.toHaveBeenCalled();
-    });
-    test("still selects openai.image for a direct managed image model", async () => {
-        const fetch = vi.fn(async (request) => ({
-            id: request.id,
-            status: 200,
-            statusText: "OK",
-            headers: { "content-type": "application/json" },
-            body: { kind: "text" as const, value: '{"data":[{"b64_json":"bWFuYWdlZA=="}]}' },
-        }));
-        window.shotshot = {
-            agent: {} as never,
-            skills: {} as never,
-            platform: "darwin",
-            managedModels: {
-                listModels: vi.fn(async () => [{ id: "managed-image", name: "Managed Image", capability: "image" as const, execution: "direct" as const }]),
-                fetch,
-                abort: vi.fn(),
-            },
-        };
-        const byok = mediaConfig("https://api.openai.com", "gpt-image-2", "image");
-        const config = { ...byok, credentialMode: "shotshot" as const, credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const, managedModels: { ...byok.managedModels, image: "managed-image" } };
-
-        await expect(generateResolvedMedia({ config, modality: "image", prompt: "cat" })).resolves.toEqual({ kind: "image", sources: ["data:image/png;base64,bWFuYWdlZA=="] });
-        expect(fetch.mock.calls[0]![0]).toMatchObject({ path: "/v1/images/generations" });
     });
     test.each([
         ["https://api.openai.com", "openai", "gpt-image-2", "image", "direct", "openai.image"],

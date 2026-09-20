@@ -318,7 +318,7 @@ function ShotshotPage() {
     const selectedNodeIdsRef = useRef(selectedNodeIds);
     const viewportRef = useRef(viewport);
     const focusAnimRef = useRef<number | null>(null);
-    const generateNodeRef = useRef<((nodeId: string, mode: CanvasNodeGenerationMode, prompt: string, onVideoChild?: (childId: string) => void, onImageChild?: (childId: string) => void, managedImageModel?: string, referenceSession?: ReferenceImageSession, scriptSource?: ScriptAssetProvenance) => Promise<void>) | null>(null);
+    const generateNodeRef = useRef<((nodeId: string, mode: CanvasNodeGenerationMode, prompt: string, onVideoChild?: (childId: string) => void, onImageChild?: (childId: string) => void, referenceSession?: ReferenceImageSession, scriptSource?: ScriptAssetProvenance) => Promise<void>) | null>(null);
     const generateStoryboardRef = useRef<((scriptNodeId: string, shotId: string, settings: StoryboardSettings) => void) | null>(null);
     const connectingParamsRef = useRef(connectingParams);
     const connectionTargetNodeIdRef = useRef(connectionTargetNodeId);
@@ -2317,12 +2317,12 @@ function ShotshotPage() {
     }, []);
 
     const handleGenerateNode = useCallback(
-        async (nodeId: string, mode: CanvasNodeGenerationMode, prompt: string, onVideoChild?: (childId: string) => void, onImageChild?: (childId: string) => void, managedImageModel?: string, referenceSession?: ReferenceImageSession, scriptSource?: ScriptAssetProvenance) => {
+        async (nodeId: string, mode: CanvasNodeGenerationMode, prompt: string, onVideoChild?: (childId: string) => void, onImageChild?: (childId: string) => void, referenceSession?: ReferenceImageSession, scriptSource?: ScriptAssetProvenance) => {
             const sourceNode = nodesRef.current.find((node) => node.id === nodeId);
             // 生成产物的项目资产 source 脚本侧标注：显式来源（镜头视频版本，见 handleGenerateShotVideo）优先，
             // 其余从来源节点血统推导（分镜图 / 实体参考图，含 Agent 路径）。
             const scriptProvenance = scriptSource ?? deriveScriptProvenance(nodeId);
-            const generationConfig = withReferenceImageSession(buildGenerationConfig(effectiveConfig, sourceNode, mode, managedImageModel), referenceSession);
+            const generationConfig = withReferenceImageSession(buildGenerationConfig(effectiveConfig, sourceNode, mode), referenceSession);
             if (!isAiConfigReady(generationConfig, generationConfig.model)) {
                 openConfigDialog(true);
                 return;
@@ -2993,7 +2993,7 @@ function ShotshotPage() {
             connectionsRef.current = [...connectionsRef.current, edge];
             setNodes((prev) => [...prev, imageNode]);
             setConnections((prev) => [...prev, edge]);
-            void handleGenerateNode(imageNode.id, "image", prompt, undefined, undefined, settings.managedImageModel);
+            void handleGenerateNode(imageNode.id, "image", prompt);
         },
         [handleGenerateNode, setConnections, setNodes],
     );
@@ -3144,7 +3144,7 @@ function ShotshotPage() {
                     ...referenceNodeIds.map((refNodeId) => ({ id: nanoid(), fromNodeId: refNodeId, toNodeId: childId })),
                 ]);
                 updateScriptNodeData(scriptNodeId, (data) => ({ ...data, output: { ...data.output, storyboardNodes: { ...data.output.storyboardNodes, [shotId]: childId } } }));
-            }, settings.managedImageModel, referenceSession);
+            }, referenceSession);
             return;
         }
         const sbCount = Object.keys(scriptData.output.storyboardNodes ?? {}).length;
@@ -3164,7 +3164,7 @@ function ShotshotPage() {
         setNodes((prev) => [...prev, imageNode]);
         setConnections((prev) => [...prev, ...sbEdges]);
         updateScriptNodeData(scriptNodeId, (data) => ({ ...data, output: { ...data.output, storyboardNodes: { ...data.output.storyboardNodes, [shotId]: imageNode.id } } }));
-        void handleGenerateNode(imageNode.id, "image", prompt, undefined, undefined, settings.managedImageModel, referenceSession);
+        void handleGenerateNode(imageNode.id, "image", prompt, undefined, undefined, referenceSession);
     }, [ensureEntityRefNodes, handleGenerateNode, isAiConfigReady, message, openConfigDialog, setConnections, setNodes, t, updateScriptNodeData]);
     useEffect(() => {
         generateStoryboardRef.current = handleGenerateStoryboard;
@@ -3510,9 +3510,9 @@ function ShotshotPage() {
                             shotVideoVersions: { ...data.output.shotVideoVersions, [shotId]: pushShotVideoVersion(data.output.shotVideoVersions?.[shotId], childId) },
                         },
                     }));
-                }, undefined, undefined, undefined, scriptProvenance);
+                }, undefined, undefined, scriptProvenance);
             } else {
-                generateNodeRef.current?.(current.id, "video", shot.finalPrompt, undefined, undefined, undefined, undefined, scriptProvenance);
+                generateNodeRef.current?.(current.id, "video", shot.finalPrompt, undefined, undefined, undefined, scriptProvenance);
             }
         },
         [handleBatchGenerateScriptVideos, message, t, updateScriptNodeData],

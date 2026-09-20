@@ -240,7 +240,7 @@ export function createSessionRuntimeRegistry(options: SessionRuntimeRegistryOpti
     const preparations = new Map<string, Promise<SessionRuntimeRegistryItem>>();
     const resolve = (config: ResolvedTextModelConfig) => {
         if (options.resolveModel) return options.resolveModel(config);
-        if (config.source === "chatgpt" || config.source === "platform") throw new Error("managed_agent_unavailable");
+        if (config.source === "chatgpt") throw new Error("managed_agent_unavailable");
         return buildModelsFromConfig(config).model;
     };
     let generation = 0;

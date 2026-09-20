@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import { videoModelSelectionPatch } from "@/components/video-settings-panel";
 import { getConfiguredAutodlWorkflow } from "@/lib/canvas/autodl-generation-input";
-import { CapabilityModelPicker } from "@/components/managed-model-picker";
+import { ModelPicker } from "@/components/model-picker";
 import { modelOptionName } from "@/stores/use-config-store";
 import { useConfigStore, useEffectiveConfig } from "@/stores/use-config-store";
 import { audioConfigPatch, audioOverrideKeys, buildNodeConfig, clearMetadataPatch, hasMetadataOverride, imageOverrideKeys, textOverrideKeys, videoConfigPatch, videoOverrideKeys } from "@/lib/canvas/node-config";
@@ -127,7 +127,7 @@ export function CanvasNodePromptPanel({ node, nodes, isRunning, onPromptChange, 
                 <div className="flex min-w-0 items-center gap-2">
                     {mode === "image" ? (
                         <>
-                            <CapabilityModelPicker config={config} value={config.model} nodeModel={node.metadata?.model} onChange={(model) => onConfigChange(node.id, falModelSelectionPatch(config, model, node.metadata) || { model })} capability="image" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
+                            <ModelPicker config={config} value={config.model} onChange={(model) => onConfigChange(node.id, falModelSelectionPatch(config, model, node.metadata) || { model })} capability="image" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
                             <CanvasImageSettingsPopover
                                 config={config}
                                 providerOptions={node.metadata?.providerOptions}
@@ -143,17 +143,17 @@ export function CanvasNodePromptPanel({ node, nodes, isRunning, onPromptChange, 
                         </>
                     ) : mode === "video" ? (
                         <>
-                            <CapabilityModelPicker config={config} value={config.model} nodeModel={node.metadata?.model} onChange={(model) => onConfigChange(node.id, (falModelSelectionPatch(config, model, node.metadata) || videoModelSelectionPatch(config, model)))} capability="video" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
+                            <ModelPicker config={config} value={config.model} onChange={(model) => onConfigChange(node.id, (falModelSelectionPatch(config, model, node.metadata) || videoModelSelectionPatch(config, model)))} capability="video" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
                             <CanvasVideoSettingsPopover config={config} providerOptions={node.metadata?.providerOptions} onMetadataChange={patch => onConfigChange(node.id, patch)} buttonClassName={ghostSettingsButtonClass} onConfigChange={(key, value) => onConfigChange(node.id, videoConfigPatch(key, value))} isOverridden={hasMetadataOverride(node.metadata, videoOverrideKeys)} onResetOverrides={() => onConfigChange(node.id, clearMetadataPatch(videoOverrideKeys))} />
                         </>
                     ) : mode === "audio" ? (
                         <>
-                            <CapabilityModelPicker config={config} value={config.model} nodeModel={node.metadata?.model} onChange={(model) => onConfigChange(node.id, { model })} capability="audio" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
+                            <ModelPicker config={config} value={config.model} onChange={(model) => onConfigChange(node.id, { model })} capability="audio" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
                             <CanvasAudioSettingsPopover config={config} buttonClassName={ghostSettingsButtonClass} onConfigChange={(key, value) => onConfigChange(node.id, audioConfigPatch(key, value))} isOverridden={hasMetadataOverride(node.metadata, audioOverrideKeys)} onResetOverrides={() => onConfigChange(node.id, clearMetadataPatch(audioOverrideKeys))} />
                         </>
                     ) : (
                         <>
-                            <CapabilityModelPicker config={config} value={config.model} nodeModel={node.metadata?.model} onChange={(model) => onConfigChange(node.id, { model })} capability="text" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
+                            <ModelPicker config={config} value={config.model} onChange={(model) => onConfigChange(node.id, { model })} capability="text" onMissingConfig={() => openConfigDialog(true)} className={ghostModelPickerClass} currentLabel={config.model ? modelOptionName(config.model) : undefined} />
                             <CanvasTextSettingsPopover config={config} count={node.metadata?.textCount || 1} buttonClassName={ghostSettingsButtonClass} onConfigChange={(_, value) => onConfigChange(node.id, { reasoningEffort: value })} onCountChange={(textCount) => onConfigChange(node.id, { textCount })} isOverridden={hasMetadataOverride(node.metadata, textOverrideKeys)} onResetOverrides={() => onConfigChange(node.id, clearMetadataPatch(textOverrideKeys))} />
                         </>
                     )}

@@ -2,7 +2,6 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useLocation } from "react-router-dom";
 
 import { AgentPanel } from "@/components/agent/agent-panel";
-import { AccountRuntime } from "@/components/layout/account-runtime";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
 import { AppReleaseForceModal } from "@/components/layout/app-release-force-modal";
 import { AppReleaseRuntime } from "@/components/layout/app-release-runtime";
@@ -28,8 +27,7 @@ export default function UserLayout({ children }: { children: ReactNode }) {
     const { pathname } = useLocation();
     const isMacDesktop = window.shotshot?.platform === "darwin";
     // AgentPanel is canvas-route-only (canvas-restructure D3; skill conversations
-    // open on their uncategorized canvas — see
-    // docs/superpowers/specs/2026-09-14-skill-create-agent-handoff-design.md §10).
+    // open on their uncategorized canvas).
     const isAgentSurface = /^\/canvas\/[^/]+/.test(pathname);
     const chatPanelSide = useConfigStore((state) => state.config.chatPanelSide);
     const agentPanelOrder = agentPanelOrderFor(chatPanelSide);
@@ -89,7 +87,6 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
     return (
         <div className="relative flex h-dvh overflow-hidden bg-background text-foreground">
-            <AccountRuntime />
             <AppReleaseRuntime />
             {isMacDesktop ? <div className="native-titlebar-drag-region" aria-hidden="true" /> : null}
             <AppSidebar />

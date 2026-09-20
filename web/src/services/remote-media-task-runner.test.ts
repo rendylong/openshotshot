@@ -1,8 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { createModelChannel, defaultConfig, type AiConfig } from "@/stores/use-config-store";
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
-import { ManagedRequestError } from "@/services/api/model-transport";
 import type { CreateRemoteTaskInput, RemoteMediaTask, RemoteMediaTaskPatch, RemoteMediaTaskRunnerDeps, RemoteMediaTaskStatus, RemoteTaskDeliveryOutcome } from "@/types/remote-media-task";
 import { createRemoteMediaTaskRunner, interruptRemoteTasksForTarget, registerRemoteMediaTaskRunner, remoteTaskApplyRequiresInterruption, startRemoteCanvasMediaTask, stopRemoteTasksForTarget, wakeRemoteMediaTask } from "./remote-media-task-runner";
 import { useRemoteMediaTaskStore } from "@/stores/use-remote-media-task-store";
@@ -169,63 +167,6 @@ function startDeps(overrides: Record<string, unknown> = {}) {
 }
 
 describe("remote canvas media task submission", () => {
-    beforeEach(() => resetManagedCatalogForTests());
-
-    test("submits managed video as a script-free adapter task without persisting a BYOK secret", async () => {
-        const listModels = vi.fn(async () => [{ id: "managed-video", name: "Video", capability: "video" as const, execution: "remote_task" as const }]);
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: { listModels, fetch: vi.fn(), abort: vi.fn() } };
-        const deps = startDeps();
-        const input = adapterInput();
-        input.config = {
-            ...input.config,
-            credentialMode: "shotshot",
-            credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" },
-            managedModels: { ...input.config.managedModels, video: "managed-video" },
-            apiKey: "legacy-secret",
-            channels: input.config.channels.map((channel) => ({ ...channel, apiKey: "legacy-secret" })),
-        };
-
-        await startRemoteCanvasMediaTask(input, deps);
-
-        expect(deps.createTask).toHaveBeenCalledWith(expect.objectContaining({
-            channelId: "shotshot-managed",
-            modelName: "managed-video",
-            baseUrlSnapshot: "",
-            adapterId: "openai.video",
-        }));
-        expect(JSON.stringify(deps.createTask.mock.calls[0][0])).not.toContain("legacy-secret");
-        expect(deps.submitAdapter).toHaveBeenCalledWith(expect.objectContaining({
-            config: expect.objectContaining({ credentialMode: "shotshot", model: "managed-video", apiKey: "", baseUrl: "" }),
-        }));
-    });
-
-    test("resolves the managed video model from the catalog at dispatch time", async () => {
-        const listModels = vi.fn(async () => [{ id: "managed-video", name: "Video", capability: "video" as const, execution: "remote_task" as const }]);
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: { listModels, fetch: vi.fn(), abort: vi.fn() } };
-        const deps = startDeps();
-        const input = adapterInput();
-        input.config = {
-            ...input.config,
-            credentialMode: "shotshot",
-            credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" },
-            managedModels: { text: "", image: "", video: "", audio: "" },
-            apiKey: "legacy-secret",
-            channels: input.config.channels.map((channel) => ({ ...channel, apiKey: "legacy-secret" })),
-        };
-
-        await startRemoteCanvasMediaTask(input, deps);
-
-        expect(deps.createTask).toHaveBeenCalledWith(expect.objectContaining({
-            channelId: "shotshot-managed",
-            modelName: "managed-video",
-            baseUrlSnapshot: "",
-            adapterId: "openai.video",
-        }));
-        expect(deps.submitAdapter).toHaveBeenCalledWith(expect.objectContaining({
-            config: expect.objectContaining({ credentialMode: "shotshot", model: "managed-video", apiKey: "", baseUrl: "" }),
-        }));
-    });
-
     test("persists adapter identity and never copies the API key or scripts", async () => {
         const deps = startDeps();
 
@@ -477,48 +418,19 @@ describe("remote canvas media task submission", () => {
         vi.useRealTimers();
     });
 
-    test("retries an idempotent managed submission on a transient gateway 503", async () => {
+    test("retries an idempotent submission on a transient network error", async () => {
         vi.useFakeTimers();
         const submitAdapter = vi.fn()
-            .mockRejectedValueOnce(new ManagedRequestError(503, "media_unavailable"))
-            .mockResolvedValueOnce({ taskId: "remote-managed" });
+            .mockRejectedValueOnce(new TypeError("Network Error"))
+            .mockResolvedValueOnce({ taskId: "remote-recovered" });
         const deps = startDeps({ submitAdapter });
         const starting = startRemoteCanvasMediaTask(hiapiAdapterInput(), deps);
         await vi.advanceTimersByTimeAsync(3_000);
         await starting;
 
         expect(submitAdapter).toHaveBeenCalledTimes(2);
-        expect(deps.getTask("local-1")).toMatchObject({ status: "pending", remoteTaskId: "remote-managed" });
+        expect(deps.getTask("local-1")).toMatchObject({ status: "pending", remoteTaskId: "remote-recovered" });
         vi.useRealTimers();
-    });
-
-    test("reuses the managed task key after an asset-upload HTTP 500 crosses IPC", async () => {
-        vi.useFakeTimers();
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: {
-            listModels: vi.fn(async () => [{ id: "gpt-image-2-edit", name: "Image 2 edit", capability: "image" as const, execution: "remote_task" as const, spec: { aspectRatios: ["16:9"], resolutions: ["1K"] } }]), fetch: vi.fn(), abort: vi.fn(),
-        } };
-        await ensureManagedCatalog();
-        const input = remoteInput();
-        input.config = { ...input.config, credentialMode: "shotshot", credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" }, managedModels: { ...input.config.managedModels, image: "gpt-image-2-edit" } };
-        const submitAdapter = vi.fn().mockRejectedValueOnce(new ManagedRequestError(500, "internal_error")).mockResolvedValueOnce({ taskId: "remote-after-upload" });
-        const deps = startDeps({ submitAdapter });
-        const starting = startRemoteCanvasMediaTask(input, deps);
-        await vi.advanceTimersByTimeAsync(3_000);
-        await starting;
-        expect(submitAdapter).toHaveBeenCalledTimes(2);
-        expect(submitAdapter.mock.calls[0][0]).toMatchObject({ adapterId: "shotshot.managed-image" });
-        expect(submitAdapter.mock.calls[1][0].idempotencyKey).toBe(submitAdapter.mock.calls[0][0].idempotencyKey);
-        expect(deps.getTask("local-1")).toMatchObject({ status: "pending", remoteTaskId: "remote-after-upload" });
-        vi.useRealTimers();
-    });
-
-    test("fails a non-idempotent submission outright on a gateway 503", async () => {
-        const submit = vi.fn().mockRejectedValue(new ManagedRequestError(503, "media_unavailable"));
-        const deps = startDeps({ submit });
-        await startRemoteCanvasMediaTask(remoteInput(), deps);
-
-        expect(submit).toHaveBeenCalledTimes(1);
-        expect(deps.getTask("local-1")).toMatchObject({ status: "failed", error: "media_unavailable" });
     });
 
     test("waits out idempotency 409 without consuming the network retry budget", async () => {
@@ -1400,22 +1312,6 @@ describe("remote media task runner", () => {
         }));
     });
 
-    test("keeps an in-flight managed task queryable after the preference changes", async () => {
-        const query = vi.fn().mockResolvedValue({ status: "pending" });
-        const config = { ...configuredAiConfig(), credentialMode: "shotshot" as const, credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const, managedModels: { text: "", image: "", video: "changed-model", audio: "" } };
-        const { deps, task } = fakeDeps({ query, config, task: completeTask({ channelId: "shotshot-managed", capability: "video", modelName: "managed-video", baseUrlSnapshot: "" }) });
-
-        await createRemoteMediaTaskRunner(deps).start();
-
-        expect(query).toHaveBeenCalledWith(expect.objectContaining({
-            capability: "video",
-            taskId: "remote-1",
-            queryScript: "return { status: 'pending' }",
-            config: expect.objectContaining({ credentialMode: "shotshot", model: "managed-video", apiKey: "", baseUrl: "", channels: [] }),
-        }));
-        expect(task().status).toBe("pending");
-    });
-
     test("treats explicit provider failure as terminal", async () => {
         const { deps, task } = fakeDeps({ query: vi.fn().mockResolvedValue({ status: "failed", error: "provider denied" }) });
 
@@ -1575,9 +1471,9 @@ describe("remote media task runner", () => {
         expect(task()).toMatchObject({ status: "failed", error: "Unexpected token" });
     });
 
-    test("backs off and retries when the managed gateway answers 503 during query", async () => {
+    test("backs off and retries when the query answers a transient network error", async () => {
         const query = vi.fn()
-            .mockRejectedValueOnce(new ManagedRequestError(503, "media_unavailable"))
+            .mockRejectedValueOnce(new TypeError("Network Error"))
             .mockResolvedValueOnce({ status: "succeeded", result: "data:image/png;base64,OK" });
         const { deps, task } = fakeDeps({ query });
         const runner = createRemoteMediaTaskRunner(deps);
@@ -1588,15 +1484,6 @@ describe("remote media task runner", () => {
 
         expect(query).toHaveBeenCalledTimes(2);
         expect(task().status).toBe("succeeded");
-    });
-
-    test("still fails terminally on a managed 404 during query", async () => {
-        const query = vi.fn().mockRejectedValue(new ManagedRequestError(404, "task_not_found"));
-        const { deps, task } = fakeDeps({ query });
-
-        await createRemoteMediaTaskRunner(deps).start();
-
-        expect(task()).toMatchObject({ status: "failed", error: "task_not_found" });
     });
 
     test("interrupts when a successful result target no longer exists", async () => {
@@ -1725,18 +1612,6 @@ describe("remote media task runner", () => {
         expect(deps.deliver).toHaveBeenCalledOnce(); runner.dispose();
     });
 
-    test.each(["failed", "timed_out", "submission_unknown"] as const)("shotshot managed image %s retry queries the original gateway task", async status => {
-        const model = "gpt-image-2/text-to-image";
-        const queryAdapter = vi.fn().mockResolvedValue({ status: "succeeded", result: { kind: "image", sources: ["data:image/png;base64,AQID"] } });
-        const { deps, task } = fakeDeps({ task: adapterTask({ capability: "image", adapterId: "shotshot.managed-image", modelName: model, channelId: "shotshot-managed", status }), queryAdapter });
-        const runner = createRemoteMediaTaskRunner(deps); await runner.start();
-        await Promise.all([runner.retryResult("local-1", task().target), runner.retryResult("local-1", task().target)]);
-        await vi.waitFor(() => expect(task().status).toBe("succeeded"));
-        expect(queryAdapter).toHaveBeenCalledOnce();
-        expect(queryAdapter.mock.calls[0][0]).toMatchObject({ remoteTaskId: "remote-1", modelName: model, adapterId: "shotshot.managed-image" });
-        expect(deps.deliver).toHaveBeenCalledOnce(); runner.dispose();
-    });
-
     test.each(["failed", "timed_out", "submission_unknown"] as const)("hiapi image %s retry queries and delivers the original task", async status => {
         const queryAdapter = vi.fn().mockResolvedValue({ status: "succeeded", result: { kind: "image", sources: ["https://example.com/result.png"] } });
         const { deps, task } = fakeDeps({ task: adapterTask({ adapterId: "hiapi.image", status }), queryAdapter });
@@ -1756,7 +1631,7 @@ describe("remote media task runner", () => {
             return { status: "succeeded", result: { kind: "video", source: new Blob(["fixture"], { type: "video/mp4" }) } };
         });
         const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
-        const { deps, task } = fakeDeps({ task: adapterTask({ capability: "video", adapterId: "openai.video", channelId: "shotshot-managed" }) });
+        const { deps, task } = fakeDeps({ task: adapterTask({ capability: "video", adapterId: "openai.video" }) });
         let firstDownload = true;
         deps.persistTaskPatch = vi.fn(async (id, patch) => {
             if (patch.phase === "downloading" && firstDownload) { firstDownload = false; throw new Error("storage unavailable"); }
@@ -1775,33 +1650,6 @@ describe("remote media task runner", () => {
         } finally { runner.dispose(); query.mockRestore(); log.mockRestore(); }
     });
 
-    test("managed video persists saving locally before delivering the original result", async () => {
-        const queryAdapter = vi.fn().mockResolvedValue({ status: "succeeded", result: { kind: "video", source: new Blob(["fixture"], { type: "video/mp4" }) } });
-        const { deps, task } = fakeDeps({ task: adapterTask({ capability: "video", adapterId: "openai.video", channelId: "shotshot-managed" }), queryAdapter });
-        deps.deliver = vi.fn(async current => { expect(current.phase).toBe("saving"); expect(task().phase).toBe("saving"); return { applied: true }; });
-        const runner = createRemoteMediaTaskRunner(deps); await runner.start();
-        expect(task()).toMatchObject({ status: "succeeded", remoteTaskId: "remote-1" });
-        expect(deps.deliver).toHaveBeenCalledOnce(); runner.dispose();
-    });
-
-    test("managed result recovery persists one confirmation request and then resumes ordinary queries", async () => {
-        const queryAdapter = vi.fn()
-            .mockResolvedValueOnce({ status: "pending", phase: "queued", recoveryPhase: "confirming" })
-            .mockResolvedValue({ status: "succeeded", result: { kind: "image", sources: ["https://example.com/original.png"] } });
-        const { deps, task } = fakeDeps({ task: adapterTask({ adapterId: "shotshot.managed-image", status: "submission_unknown" }), queryAdapter });
-        const runner = createRemoteMediaTaskRunner(deps); await runner.start();
-        await runner.retryResult("local-1", task().target);
-        await vi.advanceTimersByTimeAsync(0);
-        expect(queryAdapter.mock.calls[0][0]).toMatchObject({ recoveryRequested: true, remoteTaskId: "remote-1" });
-        expect(task()).toMatchObject({ status: "pending", recoveryPhase: "confirming" });
-        expect(task().recoveryRequested).toBeUndefined();
-        await vi.advanceTimersByTimeAsync(15_000);
-        expect(queryAdapter).toHaveBeenCalledTimes(2);
-        expect(queryAdapter.mock.calls[1][0].recoveryRequested).toBeUndefined();
-        expect(task().status).toBe("succeeded");
-        expect(task().recoveryPhase).toBeUndefined();
-        expect(deps.deliver).toHaveBeenCalledOnce(); runner.dispose();
-    });
 
     test.each([undefined, ""])("fal image result retry refuses missing original ID %s", async remoteTaskId => {
         const queryAdapter = vi.fn();
@@ -1811,9 +1659,9 @@ describe("remote media task runner", () => {
         expect(queryAdapter).not.toHaveBeenCalled(); runner.dispose();
     });
 
-    test("parks gateway unknown submissions with the original ID and stops polling", async () => {
+    test("parks image adapter unknown submissions with the original ID and stops polling", async () => {
         const queryAdapter = vi.fn().mockResolvedValue({ status: "submission_unknown", error: "提交结果未知" });
-        const { deps, task } = fakeDeps({ task: adapterTask({ adapterId: "shotshot.managed-image" }), queryAdapter });
+        const { deps, task } = fakeDeps({ task: adapterTask({ adapterId: "hiapi.image" }), queryAdapter });
         const runner = createRemoteMediaTaskRunner(deps); await runner.start();
         await vi.advanceTimersByTimeAsync(0);
         expect(task()).toMatchObject({ status: "submission_unknown", remoteTaskId: "remote-1", error: "提交结果未知" });

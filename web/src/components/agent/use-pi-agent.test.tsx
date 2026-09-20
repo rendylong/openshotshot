@@ -7,7 +7,6 @@ import type { AgentBridge, AgentFileContent, PiAgentEvent, PiSessionEntrySnapsho
 import type { SkillRuntimeSnapshot, SkillsBridge } from "@/lib/skills/skill-types";
 import type { CanvasAgentOp, CanvasAgentSnapshot } from "@/lib/canvas/canvas-agent-op-types";
 import { createModelChannel, encodeChannelModel, modelOptionsFromChannels, defaultConfig, useConfigStore } from "@/stores/use-config-store";
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { useAgentStore, type AgentAttachment, type AgentCanvasContext, type AgentChatItem } from "@/stores/use-agent-store";
 import { useProjectStore, type Project } from "@/stores/canvas/use-project-store";
 import { canvasTitleFromPrompt } from "@/lib/canvas/canvas-title";
@@ -59,65 +58,6 @@ function storedGlbeRef() {
 function renderPiAgent(route = "/canvas/project-1/canvas-1") {
     return renderHook(() => usePiAgent(), { wrapper: ({ children }) => <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter> });
 }
-
-describe("Pi model credential mode", () => {
-    beforeEach(() => useAiSourceStore.setState({ status: "ready", preferences: { version: 1, selections: {} }, error: null, applying: false }));
-    afterEach(() => {
-        delete window.shotshot;
-        resetManagedCatalogForTests();
-    });
-    it("resolves a managed model without reading any BYOK credential", async () => {
-        const config = new Proxy({
-            ...defaultConfig,
-            credentialMode: "shotshot" as const,
-            credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-            managedModels: { ...defaultConfig.managedModels, text: "stale-stored-model" },
-        }, {
-            get(target, property, receiver) {
-                if (property === "apiKey" || property === "baseUrl" || property === "channels") throw new Error(`credential read: ${String(property)}`);
-                return Reflect.get(target, property, receiver);
-            },
-        });
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: { listModels: vi.fn(async () => [{ id: "managed-text", name: "managed-text", capability: "text" as const, execution: "direct" as const }]), fetch: vi.fn(), abort: vi.fn() } } as never;
-        await ensureManagedCatalog();
-
-        expect(resolvePiModelConfig(config)).toEqual({
-            credentialMode: "shotshot",
-            model: "managed-text",
-            apiFormat: "openai",
-            agentApiMode: "chat_completions",
-        });
-    });
-
-    function shotshotConfigWith(managedAgentModel: string) {
-        return new Proxy({
-            ...defaultConfig,
-            credentialMode: "shotshot" as const,
-            credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-            managedAgentModel,
-        }, {
-            get(target, property, receiver) {
-                if (property === "apiKey" || property === "baseUrl" || property === "channels") throw new Error(`credential read: ${String(property)}`);
-                return Reflect.get(target, property, receiver);
-            },
-        });
-    }
-
-    async function ensureCatalogWith(models: Array<{ id: string; name: string; capability: "text" }>) {
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: { listModels: vi.fn(async () => models.map((model) => ({ ...model, execution: "direct" as const }))), fetch: vi.fn(), abort: vi.fn() } } as never;
-        await ensureManagedCatalog();
-    }
-
-    it("uses the configured managed model when present in the catalog", async () => {
-        await ensureCatalogWith([{ id: "m-a", name: "m-a", capability: "text" }, { id: "m-b", name: "m-b", capability: "text" }]);
-        expect(resolvePiModelConfig(shotshotConfigWith("m-b"))).toMatchObject({ credentialMode: "shotshot", model: "m-b", agentApiMode: "chat_completions" });
-    });
-
-    it("falls back to the first text model when the configured choice is missing", async () => {
-        await ensureCatalogWith([{ id: "m-a", name: "m-a", capability: "text" }, { id: "m-b", name: "m-b", capability: "text" }]);
-        expect(resolvePiModelConfig(shotshotConfigWith("gone"))).toMatchObject({ credentialMode: "shotshot", model: "m-a" });
-    });
-});
 
 function canvasSnapshot(nodes: number, viewport: { x: number; y: number }): CanvasAgentSnapshot {
     return {
@@ -299,7 +239,6 @@ describe("usePiAgent turn activity", () => {
     afterEach(() => {
         vi.useRealTimers();
         delete window.shotshot;
-        resetManagedCatalogForTests();
     });
 
     it("records one completed tool row and freezes the total duration on its user turn", async () => {
@@ -409,41 +348,6 @@ describe("usePiAgent turn activity", () => {
 
         expect(requestImageQuestionMock).toHaveBeenCalledTimes(1);
         expect(useProjectStore.getState().projects[0].canvases[0].title).toBe("脚本优化");
-        unmount();
-    });
-
-    it("renames the home placeholder via the managed gateway in shotshot credential mode", async () => {
-        const fetch = vi.fn(async (request) => ({
-            id: request.id, status: 200, statusText: "OK", headers: { "content-type": "application/json" },
-            body: { kind: "text" as const, value: '{"choices":[{"message":{"content":" 科技感海报 "}}]}' },
-        }));
-        window.shotshot = {
-            ...(window.shotshot as NonNullable<typeof window.shotshot>),
-            managedModels: {
-                listModels: vi.fn(async () => [{ id: "managed-text", name: "managed-text", capability: "text" as const, execution: "direct" as const }]),
-                fetch: fetch as never,
-                abort: vi.fn(),
-            },
-        } as never;
-        useConfigStore.setState({
-            config: {
-                ...defaultConfig,
-                credentialMode: "shotshot",
-                credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-            },
-        });
-        const placeholder = canvasTitleFromPrompt("帮我做一张 iPhone 广告图");
-        useProjectStore.setState({ projects: [projectWithCanvas("canvas-1", placeholder)], hydrated: true, hydrationStatus: "success" });
-        useAgentStore.setState({ canvasContext: canvasContext(canvasSnapshot(0, { x: 0, y: 0 }), vi.fn()) });
-        const { result, unmount } = renderPiAgent();
-
-        await act(async () => { await result.current.sendPrompt("帮我做一张 iPhone 广告图"); });
-        await act(async () => {});
-
-        expect(useProjectStore.getState().projects[0].canvases[0].title).toBe("科技感海报");
-        expect(requestImageQuestionMock).not.toHaveBeenCalled();
-        const titleRequest = fetch.mock.calls.map(([request]) => request).find((request) => request.path === "/v1/chat/completions");
-        expect(JSON.parse(titleRequest?.body?.value ?? "{}")).toMatchObject({ model: "managed-text", stream: false });
         unmount();
     });
 
@@ -802,103 +706,6 @@ describe("usePiAgent turn activity", () => {
         // 后续来自同一 session 的 text delta 不被重新测量成第二条 TTFB。
         await act(async () => { textDelta("又一个 token"); });
         expect(ttfbCount()).toBe(1);
-        unmount();
-    });
-
-    it("rehydrates the managed catalog at the send gate instead of failing the first prompt", async () => {
-        useConfigStore.setState({
-            config: {
-                ...defaultConfig,
-                credentialMode: "shotshot" as const,
-                credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-                managedModels: { text: "", image: "", video: "", audio: "" },
-            } as never,
-        });
-        const listModels = vi.fn(async () => [{ id: "shotshot-text-pro", name: "shotshot-text-pro", capability: "text" as const, execution: "direct" as const }]);
-        window.shotshot!.managedModels = { listModels, fetch: vi.fn(), abort: vi.fn() } as never;
-        const { result, unmount } = renderPiAgent();
-        await act(async () => {
-            for (let index = 0; index < 8; index += 1) await Promise.resolve();
-        });
-        // 门禁触发时快照不存在（等价“从未注水”）：必须先注水再解析，而不是直接报 fetchFailed。
-        resetManagedCatalogForTests();
-
-        let accepted = false;
-        await act(async () => { accepted = await result.current.sendPrompt("读取画布"); });
-
-        expect(accepted).toBe(true);
-        expect(listModels).toHaveBeenCalledTimes(2);
-        expect(setModelConfigMock).toHaveBeenCalledWith(expect.objectContaining({ credentialMode: "shotshot", model: "shotshot-text-pro" }));
-        expect(useAgentStore.getState().connectError).toBe("");
-        unmount();
-    });
-
-    it("sending with a stale catalog snapshot resolves without awaiting hydration", async () => {
-        // 本用例用真实定时器 + setSystemTime（vitest 4 下仅 mock Date）：发送若被
-        // 注水阻塞会挂死在 act 内并污染整个文件的 act 环境，因此用 1s 兜底快速失败。
-        vi.useRealTimers();
-        vi.setSystemTime(1_000);
-        useConfigStore.setState({
-            config: {
-                ...defaultConfig,
-                credentialMode: "shotshot" as const,
-                credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-                managedModels: { text: "", image: "", video: "", audio: "" },
-            } as never,
-        });
-        // 预置一份 ready 快照（fetchedAt = 1_000），随后把时钟拨过 60s TTL：
-        // 快照已 stale 但仍可用，发送必须取旧快照，不能 await 后台注水。
-        const seedListModels = vi.fn(async () => [{ id: "shotshot-text-pro", name: "shotshot-text-pro", capability: "text" as const, execution: "direct" as const }]);
-        window.shotshot!.managedModels = { listModels: seedListModels, fetch: vi.fn(), abort: vi.fn() } as never;
-        await ensureManagedCatalog();
-        // 之后 listModels 永远挂起：若发送路径仍 await 注水，sendPrompt 将永远无法完成。
-        const listModels = vi.fn(() => new Promise<never>(() => {}));
-        window.shotshot!.managedModels = { listModels, fetch: vi.fn(), abort: vi.fn() } as never;
-        vi.setSystemTime(62_000);
-
-        const { result, unmount } = renderHook(() => usePiAgent());
-        const staleGateTimeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 1_000));
-        let accepted: boolean | undefined;
-        await act(async () => {
-            accepted = await Promise.race([result.current.sendPrompt("hi"), staleGateTimeout]);
-        });
-
-        expect(accepted).toBe(true);
-        expect(listModels).toHaveBeenCalledTimes(1); // 后台刷新已发起但挂起，未阻塞发送
-        expect(setModelConfigMock).toHaveBeenCalledWith(expect.objectContaining({ credentialMode: "shotshot", model: "shotshot-text-pro" }));
-        expect(useAgentStore.getState().connectError).toBe("");
-        expect(useAgentStore.getState().messages.some((item) => item.role === "user")).toBe(true);
-        unmount();
-    });
-
-    it("fails the send gate with the fetch-failed state only when hydration itself fails", async () => {
-        useConfigStore.setState({
-            config: {
-                ...defaultConfig,
-                credentialMode: "shotshot" as const,
-                credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-                managedModels: { text: "", image: "", video: "", audio: "" },
-            } as never,
-        });
-        const listModels = vi.fn(async () => {
-            throw new Error("catalog offline");
-        });
-        window.shotshot!.managedModels = { listModels, fetch: vi.fn(), abort: vi.fn() } as never;
-        const { result, unmount } = renderPiAgent();
-        await act(async () => {
-            for (let index = 0; index < 8; index += 1) await Promise.resolve();
-        });
-
-        let accepted = false;
-        await act(async () => { accepted = await result.current.sendPrompt("读取画布"); });
-
-        expect(accepted).toBe(false);
-        // 错误快照存在时发送门禁不再重试注水（仅冷启动 await）：只计挂载时那次失败请求。
-        expect(listModels).toHaveBeenCalledTimes(1);
-        expect(modelNotReadyKey()).toBe("config.managed.fetchFailed");
-        expect(useAgentStore.getState().messages.some((item) => item.role === "user")).toBe(false);
-        // sendPrompt 门禁失败会写全局 connectError/activity，显式清掉避免泄漏到后续用例。
-        useAgentStore.setState({ connectError: "", activity: "" });
         unmount();
     });
 
@@ -1613,7 +1420,6 @@ describe("usePiAgent per-session send admission", () => {
     afterEach(() => {
         vi.useRealTimers();
         delete window.shotshot;
-        resetManagedCatalogForTests();
     });
 
     function installBridge(promptImpl: AgentBridge["prompt"]) {
@@ -1770,46 +1576,5 @@ describe("OpenRouter Agent capabilities", () => {
         const channel = createModelChannel({ provider: "openrouter", apiKey: "fixture-key", models: [{ name: "a/model:free", capability: "text", catalog: { version: 1, source: "provider_models", providerStatus: "active", supportsTools: true, inputModalities } }] });
         const config = { ...defaultConfig, channels: [channel], agentModel: encodeChannelModel(channel.id, channel.models[0].name) };
         expect(resolvePiModelConfig(config)).toMatchObject({ supportsImageInput: inputModalities.includes("image") });
-    });
-});
-
-describe("shotshot agent model resolution", () => {
-    const shotshotConfig = {
-        ...defaultConfig,
-        credentialMode: "shotshot" as const,
-        credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-        managedModels: { text: "", image: "", video: "", audio: "" },
-    };
-
-    function mockCatalog(models: Array<{ id: string; capability: "text" | "video" }>) {
-        window.shotshot = { agent: {} as never, skills: {} as never, platform: "darwin", managedModels: { listModels: vi.fn(async () => models.map((m) => ({ ...m, name: m.id, execution: "direct" as const }))), fetch: vi.fn(), abort: vi.fn() } } as never;
-    }
-
-    afterEach(() => {
-        delete window.shotshot;
-        resetManagedCatalogForTests();
-    });
-
-    it("resolves the first catalog text model without a stored preference", async () => {
-        mockCatalog([{ id: "shotshot-text-pro", capability: "text" }]);
-        useAiSourceStore.setState({ status: "ready", error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig as never });
-        await ensureManagedCatalog();
-        expect(resolvePiModelConfig(useConfigStore.getState().config)).toMatchObject({ credentialMode: "shotshot", model: "shotshot-text-pro" });
-    });
-
-    it("returns null and names the missing-text state when the catalog has no text model", async () => {
-        mockCatalog([{ id: "managed-video", capability: "video" }]);
-        useAiSourceStore.setState({ status: "ready", error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig as never });
-        await ensureManagedCatalog();
-        expect(resolvePiModelConfig(useConfigStore.getState().config)).toBeNull();
-        expect(modelNotReadyKey()).toBe("config.managed.agentMissingText");
-    });
-
-    it("names the fetch-failed state when no snapshot exists", () => {
-        useAiSourceStore.setState({ status: "ready", error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig as never });
-        expect(modelNotReadyKey()).toBe("config.managed.fetchFailed");
     });
 });

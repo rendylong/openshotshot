@@ -3,11 +3,10 @@ import { assertByokGenerationAllowed } from "./ai-source-guard";
 import axios from "axios";
 
 import i18n from "@/i18n";
-import type { ManagedModelDescriptor } from "@/lib/desktop/managed-model-types";
 import { AUTODL_WORKFLOWS } from "@/lib/models/autodl-workflows";
 import { isAutodlChannel, resolveProvider } from "@/lib/models/model-resolver";
 import { providerModelsUrl } from "@/services/api/provider-endpoints";
-import { buildApiUrl, credentialModeFor, modelProviderOf, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
+import { buildApiUrl, modelProviderOf, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig, type ModelChannel } from "@/stores/use-config-store";
 import { requestChatCompletion } from "./chat-completions";
 import { generateResolvedMedia } from "./media-dispatcher";
 import { requestModel } from "./model-transport";
@@ -205,53 +204,6 @@ function resolveRequestSize(quality: string | undefined, size: string) {
     }
     if (value.includes(":")) return resolveSize(quality, value);
     throw new Error(apiText("invalidImageSizeFormat"));
-}
-
-export type ManagedModelSpec = NonNullable<ManagedModelDescriptor["spec"]>;
-
-/**
- * The design's fixed managed ratio subset. The operator's pricing matrix only has rows for these
- * ratios, so a managed request without a catalog spec must still stay inside it. `spec.aspectRatios`
- * is already the intersection of the model's real set with this subset.
- */
-export const MANAGED_SPEC_RATIOS = ["1:1", "4:3", "3:4", "16:9", "9:16"] as const;
-
-// Managed image requests bill on a canonical spec string (`<ratio>|<tier>|<quality>`) rather than a
-// folded pixel size. This deliberately does NOT call normalizeQuality/resolveSize: QUALITY_BASE and
-// QUALITY_ALIASES treat `standard`/`hd`/`low`/… as pixel bases, so routing a managed token through
-// them would fold it into pixels — the exact behavior this path exists to replace. The descriptor's
-// spec decides which second axis to emit; the gateway owns grammar validation.
-export function resolveManagedSpecSize(config: AiConfig, spec?: ManagedModelSpec): string {
-    const ratio = config.size.trim();
-    if (!/^\d+:\d+$/.test(ratio)) {
-        throw new Error(apiText("managedImageSpecRequiresRatio", { model: config.model, size: ratio }));
-    }
-    // The ratio must be one the model actually declares; without a spec, the design's fixed subset.
-    // A stale/persisted `3:2` or `21:9` would build a key the operator's matrix never priced.
-    const declaredRatios: readonly string[] = spec?.aspectRatios?.length ? spec.aspectRatios : MANAGED_SPEC_RATIOS;
-    if (!declaredRatios.includes(ratio)) {
-        throw new Error(apiText("managedImageSpecRatioUnsupported", { model: config.model, ratio, ratios: declaredRatios.join(", ") }));
-    }
-    // A 3-segment key (`<ratio>|<tier>|<quality>`) needs a third config value the client does not
-    // carry, so a model exposing both axes cannot be requested. The known two-axis catalog models are
-    // remote_task and unreachable until the async image pipeline lands; fail loudly here rather than
-    // emit a 2-segment key the operator's matrix never priced.
-    if (spec?.resolutions?.length && spec.qualities?.length) {
-        throw new Error(apiText("managedImageSpecTwoAxesUnsupported", { model: config.model, size: ratio, quality: config.quality.trim() }));
-    }
-    const secondAxis = config.quality.trim();
-    const declaredAxis = spec?.resolutions?.length ? spec.resolutions : spec?.qualities ?? [];
-    // A model that declares exactly one second axis must receive a declared value for it. The panel
-    // writes a declared value on selection, but entry points that never mount the panel can still
-    // carry a stale global quality (`high`, `auto`, ...). Normalize that value at the request boundary
-    // so every caller emits a priced key and never falls back to an unpriced bare ratio.
-    if (declaredAxis.length) {
-        const selectedAxis = declaredAxis.includes(secondAxis) ? secondAxis : declaredAxis[0];
-        return `${ratio}|${selectedAxis}`;
-    }
-    // Ratio-only model: the wire key carries no second segment, so a non-declared quality token must
-    // never leak into it (and `auto` is equally unrepresentable).
-    return ratio;
 }
 
 function resolveGeminiImageConfig(config: AiConfig) {
@@ -779,13 +731,11 @@ export async function requestOpenAIImages(
     count: number,
     mask?: ReferenceImage,
     options?: RequestOptions,
-    managedSpec?: ManagedModelSpec,
 ) {
     await assertByokGenerationAllowed("image");
     references = await prepareReferenceObjects(config, references, { signal: options?.signal, preserveOriginal: Boolean(mask) });
-    const managed = credentialModeFor(config, "image") === "shotshot";
-    const quality = managed ? undefined : normalizeQuality(config.quality);
-    const requestSize = managed ? resolveManagedSpecSize(config, managedSpec) : resolveRequestSize(quality, config.size);
+    const quality = normalizeQuality(config.quality);
+    const requestSize = resolveRequestSize(quality, config.size);
     const background = normalizeBackground(config.background);
     try {
         if (!references.length) {

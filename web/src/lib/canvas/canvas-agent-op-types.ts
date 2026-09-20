@@ -24,7 +24,7 @@ export type CanvasAgentOp =
     | { type: "script_resolve_shot_refs"; nodeId: string; shotId: string; names: string[]; /** 工具期已解析的实体 id（bridge 直连采用，跳过名称匹配）；与 names 一一对应 */ entityIds?: string[] }
     | { type: "script_bind_entity"; nodeId: string; entityId: string }
     | { type: "script_assign_entity_ref"; entityId: string; refId: string; nodeId: string }
-    | { type: "script_generate_storyboard"; nodeId: string; shotId: string; settings: { metadata: Partial<CanvasNodeMetadata>; managedImageModel?: string } }
+    | { type: "script_generate_storyboard"; nodeId: string; shotId: string; settings: { metadata: Partial<CanvasNodeMetadata> } }
     | { type: "add_text_nodes"; items: Array<{ text: string; title?: string; width?: number; height?: number }>; direction?: "row" | "column"; gap?: number }
     | { type: "run_generation"; nodeId: string; mode?: "text" | "image" | "video" | "audio"; prompt?: string; force?: boolean };
 

@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { planCanvasMediaGeneration } from "./canvas-media-generation-route";
 import { createModelChannel, defaultConfig, type AiConfig } from "@/stores/use-config-store";
 
@@ -86,52 +85,4 @@ describe("canvas media generation routing orchestrator", () => {
         expect(planCanvasMediaGeneration({ config: config("image", "remote_task"), capability: "image", phase: "retry", pluginHost: true })).toEqual({ mode: "direct", capability: "image", phase: "retry" });
     });
 
-    test("plans a managed remote task without requiring a stored video preference", () => {
-        const config = { ...defaultConfig, credentialModes: { ...defaultConfig.credentialModes, video: "shotshot" as const }, managedModels: { text: "", image: "", video: "", audio: "" } };
-        expect(planCanvasMediaGeneration({ config, capability: "video", phase: "first" })).toMatchObject({ mode: "remote_task", adapterId: "openai.video", timeoutMinutes: 30 });
-    });
-
-    describe("managed image execution split by catalog execution", () => {
-        function managedImageConfig(execution: "direct" | "remote_task"): AiConfig {
-            window.shotshot = {
-                agent: {} as never,
-                skills: {} as never,
-                platform: "darwin",
-                managedModels: {
-                    listModels: vi.fn(async () => [{ id: "gpt-image-2", name: "GPT Image 2", capability: "image" as const, execution }]),
-                    fetch: vi.fn(),
-                    abort: vi.fn(),
-                },
-            };
-            return {
-                ...defaultConfig,
-                credentialModes: { ...defaultConfig.credentialModes, image: "shotshot" as const },
-                managedModels: { text: "", image: "gpt-image-2", video: "", audio: "" },
-            };
-        }
-
-        afterEach(() => {
-            delete window.shotshot;
-            resetManagedCatalogForTests();
-        });
-
-        test("plans a remote_task managed image model as the managed image adapter task", async () => {
-            const config = managedImageConfig("remote_task");
-            await ensureManagedCatalog();
-
-            expect(planCanvasMediaGeneration({ config, capability: "image", phase: "first" })).toMatchObject({
-                mode: "remote_task",
-                capability: "image",
-                adapterId: "shotshot.managed-image",
-                adapterVersion: 1,
-            });
-        });
-
-        test("keeps a direct managed image model on the synchronous path", async () => {
-            const config = managedImageConfig("direct");
-            await ensureManagedCatalog();
-
-            expect(planCanvasMediaGeneration({ config, capability: "image", phase: "first" })).toEqual({ mode: "direct", capability: "image", phase: "first" });
-        });
-    });
 });

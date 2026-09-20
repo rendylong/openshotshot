@@ -10,13 +10,12 @@ import { resolvePiModelConfig } from "@/components/agent/use-pi-agent";
 import { canvasThemes } from "@/lib/canvas-theme";
 import { canvasTitleFromPrompt } from "@/lib/canvas/canvas-title";
 import { useProjectStore } from "@/stores/canvas/use-project-store";
-import { useConfigStore, credentialModeFor } from "@/stores/use-config-store";
+import { useConfigStore } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { useAgentStore } from "@/stores/use-agent-store";
 import { useAiSourceStore } from "@/stores/use-ai-source-store";
 import { useChatGptStore } from "@/stores/use-chatgpt-store";
 import { useHomeComposerStore } from "@/stores/use-home-composer-store";
-import { useManagedCatalog } from "@/lib/desktop/use-managed-catalog";
 import { readHomeAttachments } from "@/pages/home/home-attachments";
 import { HomeProjectPicker } from "@/pages/home/home-project-picker";
 import { HomeCreationGuide } from "@/pages/home/home-creation-guide";
@@ -36,22 +35,15 @@ export default function IndexPage() {
     const projectReady = useProjectStore((state) => state.hydrated && state.hydrationStatus === "success");
     const projectHydrationStatus = useProjectStore((state) => state.hydrationStatus);
     const config = useConfigStore((state) => state.config);
-    const sources = useAiSourceStore();
+    useAiSourceStore();
     useChatGptStore();
-    const managedMode = credentialModeFor(config, "agent") === "shotshot";
-    const catalog = useManagedCatalog(managedMode);
     const isAiConfigReady = Boolean(resolvePiModelConfig(config));
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
 
-    // 目录未就绪（加载中）时保持安静，消除启动期的"未配置"假警报；
-    // 判定完成后才可能提示：拉取失败、或确实解析不出可用模型。
+    // 模型未配置时提示：源判定完成后仍解析不出可用模型。
     let modelWarning: "configBlocked" | "fetchFailed" | null = null;
     if (!isAiConfigReady) {
-        if (managedMode) {
-            if (sources.status !== "loading" && catalog) modelWarning = catalog.status === "error" ? "fetchFailed" : "configBlocked";
-        } else {
-            modelWarning = "configBlocked";
-        }
+        modelWarning = "configBlocked";
     }
 
     useLayoutEffect(() => { if (focusRequest) inputRef.current?.focus(); }, [focusRequest]);
@@ -137,7 +129,7 @@ export default function IndexPage() {
                 {modelWarning ? (
                     <div className="mt-10 flex items-center justify-center gap-3 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
                             <AlertTriangle className="size-4 shrink-0" />
-                            <span>{t(modelWarning === "fetchFailed" ? "config.managed.fetchFailed" : "composer.configBlocked")}</span>
+                            <span>{t("composer.configBlocked")}</span>
                             <button
                                 type="button"
                                 className="rounded-md px-1.5 py-0.5 font-medium underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/30"

@@ -54,9 +54,9 @@ test("fal image recovery uses the durable exact item identity even after model e
     expect(isRemoteResultRetry(imageNode, [saved])).toBe(true);
 });
 
-test("shotshot managed image failures are labeled as original-task result recovery", () => {
+test("result-recoverable image adapter failures are labeled as original-task result recovery", () => {
     const imageNode = node([image({ remoteTask: task("failed") })]);
-    const saved = { id: "task-1", remoteTaskId: "remote-managed-1", capability: "image", adapterId: "shotshot.managed-image", target: { nodeId: "node-1", itemId: "item-1" } } as never;
+    const saved = { id: "task-1", remoteTaskId: "remote-1", capability: "image", adapterId: "hiapi.image", target: { nodeId: "node-1", itemId: "item-1" } } as never;
 
     expect(isRemoteResultRetry(imageNode, [saved])).toBe(true);
 });

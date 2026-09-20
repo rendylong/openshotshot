@@ -12,8 +12,8 @@ beforeEach(() => { resetReferenceImageMemoForTests(); vi.mocked(encodeReferenceJ
 afterEach(() => vi.restoreAllMocks());
 
 describe("reference image preparation", () => {
-    test.each(["shotshot", "byok"] as const)("compresses %s uploads and shares concurrent content, without changing originals", async credentialMode => {
-        const config = { ...defaultConfig, credentialMode };
+    test("compresses uploads and shares concurrent content, without changing originals", async () => {
+        const config = defaultConfig;
         const original = [png, png];
         const result = await prepareReferenceImages(config, original);
         expect(result[0]).toMatch(/^data:image\/jpeg;base64,/);

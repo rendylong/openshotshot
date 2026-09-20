@@ -1,7 +1,7 @@
 import i18n from "@/i18n";
 import { getAutodlWorkflow, type AutodlMediaKind } from "@/lib/models/autodl-workflows";
 import { isAutodlChannel } from "@/lib/models/model-resolver";
-import { credentialModeFor, resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
 import { getMediaBlob } from "@/services/file-storage";
 import { imageToDataUrl } from "@/services/image-storage";
 import { getCanvasAssetBlob } from "@/services/project-asset-storage";
@@ -11,7 +11,7 @@ import type { NodeGenerationContext } from "@/components/canvas/canvas-node-gene
 import type { MediaGenerateRequest } from "@/services/api/media-adapters/types";
 
 export function getConfiguredAutodlWorkflow(config: AiConfig) {
-    if (credentialModeFor(config, "video") === "shotshot" || !isAutodlChannel(resolveModelChannel(config, config.model))) return undefined;
+    if (!isAutodlChannel(resolveModelChannel(config, config.model))) return undefined;
     return getAutodlWorkflow(resolveModelRequestConfig(config, config.model).model);
 }
 

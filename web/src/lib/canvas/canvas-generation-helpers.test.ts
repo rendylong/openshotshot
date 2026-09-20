@@ -11,7 +11,6 @@ vi.mock("@/services/image-storage", () => ({ resolveImageUrl, uploadImage }));
 vi.mock("@/services/project-asset-storage", () => ({ getCanvasAssetBlob, resolveCanvasAssetUrl }));
 
 import { buildGenerationConfig, buildInputEvidence, buildVideoChildConnections, findRetrySourceNode, generationReferenceUrls, hydrateCanvasImages, imageModeSourceNodeTransform, resetInterruptedGeneration, resolveMetadataReferences, shouldMarkSourceStatus } from "@/lib/canvas/canvas-generation-helpers";
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { defaultConfig } from "@/stores/use-config-store";
 import { CanvasNodeType, type CanvasConnection, type CanvasNodeData, type CanvasNodeMetadata } from "@/types/canvas";
 
@@ -22,62 +21,6 @@ const connection = (fromNodeId: string, toNodeId: string): CanvasConnection => (
 
 beforeEach(() => {
     vi.clearAllMocks();
-    resetManagedCatalogForTests();
-});
-
-test("buildGenerationConfig honors a node-scoped managed image model", async () => {
-    window.shotshot = {
-        agent: {} as never,
-        skills: {} as never,
-        platform: "darwin",
-        managedModels: {
-            listModels: vi.fn(async () => [
-                { id: "managed-generate", name: "Generate", capability: "image" as const, execution: "remote_task" as const },
-                { id: "managed-edit", name: "Edit", capability: "image" as const, execution: "remote_task" as const, input_slots: [{ field: "input_urls", kind: "image" as const, required: true, accept_types: ["image/png"] }] },
-            ]),
-            fetch: vi.fn(),
-            abort: vi.fn(),
-        },
-    };
-    await ensureManagedCatalog();
-    const config = {
-        ...defaultConfig,
-        credentialMode: "shotshot" as const,
-        credentialModes: { ...defaultConfig.credentialModes, image: "shotshot" as const },
-        managedModels: { ...defaultConfig.managedModels, image: "managed-edit" },
-    };
-
-    const resolved = buildGenerationConfig(config, node("image", { model: "managed-generate" }), "image");
-
-    expect(resolved.model).toBe("managed-generate");
-    expect(resolved.managedModels.image).toBe("managed-generate");
-});
-
-test("buildGenerationConfig 把节点显式托管模型钉进任意能力的请求偏好（video）", async () => {
-    window.shotshot = {
-        agent: {} as never,
-        skills: {} as never,
-        platform: "darwin",
-        managedModels: {
-            listModels: vi.fn(async () => [
-                { id: "managed-video", name: "Managed Video", capability: "video" as const, execution: "remote_task" as const },
-            ]),
-            fetch: vi.fn(),
-            abort: vi.fn(),
-        },
-    };
-    await ensureManagedCatalog();
-    const config = {
-        ...defaultConfig,
-        credentialMode: "shotshot" as const,
-        credentialModes: { ...defaultConfig.credentialModes, video: "shotshot" as const },
-        managedModels: { ...defaultConfig.managedModels, video: "plan-default-video" },
-    };
-
-    const resolved = buildGenerationConfig(config, node("video", { model: "managed-video" }), "video");
-
-    expect(resolved.model).toBe("managed-video");
-    expect(resolved.managedModels.video).toBe("managed-video");
 });
 
 const rootNode = node("image", { prompt: "p", status: "loading" });

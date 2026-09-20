@@ -5,7 +5,7 @@ const { saveAs } = vi.hoisted(() => ({ saveAs: vi.fn() }));
 vi.mock("file-saver", () => ({ saveAs }));
 
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
-import { CONFIG_STORE_KEY, modelOptionLabel, createModelChannel, credentialModeFor, defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, normalizeAiConfig, normalizeChannelModels, normalizeCredentialMode, resolveModelExecution, useConfigStore } from "@/stores/use-config-store";
+import { CONFIG_STORE_KEY, modelOptionLabel, createModelChannel, credentialModeFor, defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, normalizeAiConfig, normalizeChannelModels, resolveModelExecution, useConfigStore } from "@/stores/use-config-store";
 
 const initialState = useConfigStore.getState();
 
@@ -25,11 +25,6 @@ describe("model execution configuration", () => {
             channelMode: "remote",
             managedModels: { text: "", image: "", video: "", audio: "" },
         });
-    });
-
-    test("accepts Shotshot mode only when a desktop account bridge exists", () => {
-        expect(normalizeCredentialMode("shotshot", false)).toBe("byok");
-        expect(normalizeCredentialMode("shotshot", true)).toBe("shotshot");
     });
 
     test("preserves BYOK channels and selections while managed selections are normalized separately", () => {

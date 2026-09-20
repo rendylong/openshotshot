@@ -87,14 +87,14 @@ describe("generation submission and polling", () => {
         const ops: CanvasAgentOp[] = [];
         ctx.emitOps = (batch) => { ops.push(...batch); };
         ctx.listModels = async () => ({ ok: true, models: [
-            { id: "managed-edit", name: "Edit", capability: "image", channelName: "ShotShot", isDefault: true, inputMode: "image", requiresReference: true },
-            { id: "managed-generate", name: "Generate", capability: "image", channelName: "ShotShot", isDefault: false, inputMode: "text", requiresReference: false },
+            { id: "chan::edit", name: "Edit", capability: "image", channelName: "Chan", isDefault: true, inputMode: "image", requiresReference: true },
+            { id: "chan::generate", name: "Generate", capability: "image", channelName: "Chan", isDefault: false, inputMode: "text", requiresReference: false },
         ] });
 
         await findTool(buildCanvasTools(ctx), "canvas_generate_node").execute("generate", { prompt: "cat", mode: "image" });
 
         const generated = ops.find((op) => op.type === "add_node" && op.metadata?.model);
-        expect(generated?.type === "add_node" ? generated.metadata?.model : undefined).toBe("managed-generate");
+        expect(generated?.type === "add_node" ? generated.metadata?.model : undefined).toBe("chan::generate");
     });
 
     it("rejects an image-only model before emitting a prompt-only generation", async () => {
@@ -102,10 +102,10 @@ describe("generation submission and polling", () => {
         const ops: CanvasAgentOp[] = [];
         ctx.emitOps = (batch) => { ops.push(...batch); };
         ctx.listModels = async () => ({ ok: true, models: [
-            { id: "managed-edit", name: "Edit", capability: "image", channelName: "ShotShot", isDefault: true, inputMode: "image", requiresReference: true },
+            { id: "chan::edit", name: "Edit", capability: "image", channelName: "Chan", isDefault: true, inputMode: "image", requiresReference: true },
         ] });
 
-        const result = await findTool(buildCanvasTools(ctx), "canvas_generate_node").execute("generate", { prompt: "cat", mode: "image", model: "managed-edit" });
+        const result = await findTool(buildCanvasTools(ctx), "canvas_generate_node").execute("generate", { prompt: "cat", mode: "image", model: "chan::edit" });
 
         expect(ops).toEqual([]);
         expect((result.content[0] as { text: string }).text).toContain("参考图");
@@ -755,7 +755,7 @@ describe("script node tools", () => {
         expect(JSON.stringify(result.content)).toContain("1 个镜头");
     });
 
-    it("canvas_script_generate_storyboards replaces a stale text-only template model with a reference-capable managed model", async () => {
+    it("canvas_script_generate_storyboards replaces a stale text-only template model with a reference-capable image model", async () => {
         const { ctx, ops } = makeScriptContext();
         const snapshot = ctx.getSnapshot();
         const scriptNode = snapshot.nodes[0]!;
@@ -765,21 +765,21 @@ describe("script node tools", () => {
             ...scriptNode.metadata,
             script: {
                 ...scriptNode.metadata!.script!,
-                template: { storyboardFirst: true, imageGen: { model: "managed-text-only", size: "16:9" } },
+                template: { storyboardFirst: true, imageGen: { model: "chan::text-only", size: "16:9" } },
             },
         };
         ctx.getSnapshot = () => snapshot;
         ctx.listScriptEntities = async () => ({ ok: true, entities: [{ id: "ent-ready", projectId: "p", group: "character", name: "主角", refs: [{ id: "ref-1", label: "sheet", state: "ready", source: "canvas", nodeId: "image-ready" }] }] });
         ctx.listModels = async () => ({ ok: true, models: [
-            { id: "managed-text-only", name: "Text", capability: "image", channelName: "ShotShot", provider: "shotshot", inputMode: "text", requiresReference: false, isDefault: true },
-            { id: "managed-edit", name: "Edit", capability: "image", channelName: "ShotShot", provider: "shotshot", inputMode: "text-and-image", requiresReference: false, isDefault: false },
+            { id: "chan::text-only", name: "Text", capability: "image", channelName: "Chan", inputMode: "text", requiresReference: false, isDefault: true },
+            { id: "chan::edit", name: "Edit", capability: "image", channelName: "Chan", inputMode: "text-and-image", requiresReference: false, isDefault: false },
         ] });
 
         await findTool(buildCanvasTools(ctx), "canvas_script_generate_storyboards").execute("storyboards", { scriptNodeId: "script-1" });
 
         expect(ops).toEqual([expect.objectContaining({
             type: "script_generate_storyboard",
-            settings: { metadata: { model: "managed-edit", size: "16:9" }, managedImageModel: "managed-edit" },
+            settings: { metadata: { model: "chan::edit", size: "16:9" } },
         })]);
     });
 

@@ -97,7 +97,7 @@ export type WebdavSyncConfig = {
     directory: string;
     lastSyncedAt: string;
 };
-export type ConfigTabKey = "account" | "channels" | "preferences" | "webdav" | "local-storage" | "memory";
+export type ConfigTabKey = "ai-sources" | "channels" | "preferences" | "webdav" | "local-storage" | "memory";
 
 export const CONFIG_STORE_KEY = "shotshot:ai_config_store";
 const OPENAI_BASE_URL = "https://api.openai.com";
@@ -614,9 +614,8 @@ export function normalizeCredentialModeSelections(value: unknown, fallback: unkn
 }
 
 export function credentialModeFor(config: Pick<AiConfig, "credentialMode" | "credentialModes">, key: CredentialModeKey): CredentialMode {
-    // 持久化配置经 normalizeAiConfig 后 credentialModes 恒为显式值；逐能力显式
-    // 选择（含 legacy shotshot 因空 managedModels 的降级）必须原样生效。
-    return config.credentialModes?.[key] || config.credentialMode;
+    // 托管模式已删除：恒返回 byok（stub，Task 7 随类型一起移除）。
+    return "byok";
 }
 
 export function normalizeManagedModelSelections(value: unknown): ManagedModelSelections {

@@ -25,7 +25,7 @@ describe("buildModelsFromConfig image input", () => {
 });
 
 it.each(["https://openrouter.ai/api/v1", "https://proxy.example/router"])("uses OpenRouter Chat Completions at %s without mutating preferences", (baseUrl) => {
-    const config = { credentialMode: "byok" as const, provider: "openrouter" as const,
+    const config = { provider: "openrouter" as const,
         model: "a/model:free", apiKey: "fixture-key", baseUrl,
         apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: true };
     const { model } = buildModelsFromConfig(config);

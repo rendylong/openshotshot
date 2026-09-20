@@ -1,7 +1,7 @@
 import type { RemoteMediaTask } from "@/types/remote-media-task";
 import type { CanvasNodeData, CanvasRemoteTaskMetadata } from "@/types/canvas";
 
-const RESULT_RECOVERABLE_IMAGE_ADAPTERS = new Set(["fal.image", "shotshot.managed-image", "hiapi.image"]);
+const RESULT_RECOVERABLE_IMAGE_ADAPTERS = new Set(["fal.image", "hiapi.image"]);
 
 export function isResultRecoverableImageAdapter(adapterId: string | undefined) {
     return Boolean(adapterId && RESULT_RECOVERABLE_IMAGE_ADAPTERS.has(adapterId));

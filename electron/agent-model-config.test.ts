@@ -2,9 +2,6 @@ import { expect, it, test, vi } from "vitest";
 import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
 import { parseAgentModelConfig, resolveAgentModel } from "./agent-model-config";
 test.each([{ source: "chatgpt", model: "gpt", apiKey: "sentinel" }, { source: "chatgpt", model: "gpt", baseUrl: "https://evil.test" }, { source: "unknown", model: "gpt" }])("rejects provider and credential injection", config => expect(() => parseAgentModelConfig(config)).toThrow());
-test("platform never falls back to API channels", async () => {
-    const registerNativeProvider = vi.fn(); await expect(resolveAgentModel({ source: "platform", model: "gpt" }, { registerNativeProvider } as unknown as ModelRuntime)).rejects.toThrow("platform_agent_unavailable"); expect(registerNativeProvider).not.toHaveBeenCalled();
-});
 test("ChatGPT requires native model and resolved auth", async () => {
     const runtime = { getModel: vi.fn(() => ({ id: "gpt", provider: "openai-codex", input: ["text", "image"] })), getAuth: vi.fn(async () => undefined) };
     await expect(resolveAgentModel({ source: "chatgpt", model: "gpt" }, runtime as unknown as ModelRuntime)).rejects.toThrow("chatgpt_auth_required");
@@ -14,7 +11,7 @@ test("ChatGPT requires native model and resolved auth", async () => {
 test("BYOK configuration changes cannot overwrite another active provider's credentials", async () => {
     const providers = new Map<string, unknown>();
     const runtime = { getModel: vi.fn(() => undefined), registerNativeProvider: vi.fn((provider: {id: string}) => { providers.set(provider.id, provider); }) };
-    const config = { model: "test", apiKey: "sentinel-first", baseUrl: "https://example.test", apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: false };
+    const config = { source: "byok" as const, model: "test", apiKey: "sentinel-first", baseUrl: "https://example.test", apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: false };
     const first = await resolveAgentModel(config, runtime as unknown as ModelRuntime);
     const second = await resolveAgentModel({ ...config, apiKey: "sentinel-second" }, runtime as unknown as ModelRuntime);
     expect(first.provider).not.toBe(second.provider);
@@ -23,7 +20,7 @@ test("BYOK configuration changes cannot overwrite another active provider's cred
 });
 
 it("accepts OpenRouter and binds every destination and protocol field in the provider fingerprint", async () => {
-    const config = { provider: "openrouter" as const, model: "a/model:free", apiKey: "fixture-key", baseUrl: "https://openrouter.ai/api/v1", apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: false };
+    const config = { source: "byok" as const, provider: "openrouter" as const, model: "a/model:free", apiKey: "fixture-key", baseUrl: "https://openrouter.ai/api/v1", apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: false };
     expect(parseAgentModelConfig(config)).toEqual(config);
     const runtime = { getModel: vi.fn(() => undefined), registerNativeProvider: vi.fn() } as unknown as ModelRuntime;
     const variants = [config, { ...config, model: "a/other" }, { ...config, apiKey: "fixture-other" }, { ...config, baseUrl: "https://proxy.example/router" }, { ...config, supportsImageInput: true }, { ...config, agentApiMode: "chat_completions" as const }, { ...config, provider: "custom" as const }];
@@ -32,7 +29,7 @@ it("accepts OpenRouter and binds every destination and protocol field in the pro
     expect(models[0].api).toBe("openai-completions");
 });
 
-test("managed configs reject renderer capability flags", () => {
+test("byok configs reject stale credential modes and unknown sources", () => {
     expect(() => parseAgentModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true })).toThrow("invalid_agent_model_config");
-    expect(() => parseAgentModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", inputModalities: ["text", "image"] })).toThrow("invalid_agent_model_config");
+    expect(() => parseAgentModelConfig({ source: "platform", model: "gpt" })).toThrow("invalid_agent_model_config");
 });

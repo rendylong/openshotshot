@@ -1,8 +1,5 @@
 import { watchChatGptStatus } from "@/stores/use-chatgpt-store";
 import { useAiSourceStore } from "@/stores/use-ai-source-store";
-import { useUserStore } from "@/stores/use-user-store";
-import { clearManagedCatalogRecord } from "@/lib/desktop/managed-catalog-store";
-import { resetManagedCatalogRuntime } from "@/lib/desktop/managed-catalog-cache";
 import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { App } from "antd";
@@ -16,14 +13,6 @@ export function ClientRootInit({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
     const handledConfigParams = useRef(false);
     useEffect(() => { void useAiSourceStore.getState().hydrate().catch(() => undefined); return watchChatGptStatus(); }, []);
-    // 登出即清托管目录的内存快照与本地记录，避免换账号误用上一账号的目录。
-    useEffect(() => {
-        return useUserStore.subscribe((state, prev) => {
-            if (prev.account.state === "signed-out" || state.account.state !== "signed-out") return;
-            resetManagedCatalogRuntime();
-            void clearManagedCatalogRecord().catch(() => undefined);
-        });
-    }, []);
     const updateConfig = useConfigStore((state) => state.updateConfig);
     const config = useConfigStore((state) => state.config);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);

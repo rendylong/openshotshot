@@ -2,14 +2,13 @@ import { prepareReferenceImages, hasReferenceMask, withReferenceImageSession } f
 import { assertByokGenerationAllowed } from "./ai-source-guard";
 import i18n from "@/i18n";
 import { resolveModel } from "@/lib/models/model-resolver";
-import { credentialModeFor, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
+import { resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
 
 import { normalizePluginAudio } from "./audio";
 import { normalizePluginImages, runModelPlugin } from "./model-plugin";
 import { getMediaAdapter } from "./media-adapters/registry";
 import type { MediaGenerateRequest, MediaResult } from "./media-adapters/types";
 import { normalizePluginVideo } from "./video";
-import { resolveManagedModelForCapability, toManagedRequestConfig } from "./model-transport";
 
 export type GenerateResolvedMediaInput = {
     config: AiConfig;
@@ -61,20 +60,6 @@ async function runLegacyDirectMedia(input: GenerateResolvedMediaInput, request: 
 
 export async function generateResolvedMedia(input: GenerateResolvedMediaInput): Promise<MediaResult> {
     input = { ...input, config: withReferenceImageSession(input.config), images: await prepareReferenceImages(input.config, input.images || [], { signal: input.signal, preserveOriginal: hasReferenceMask(input.params) }) };
-    const capability = input.modality === "image" ? "image" : input.modality === "video" ? "video" : "audio";
-    if (credentialModeFor(input.config, capability) === "shotshot") {
-        const managed = await resolveManagedModelForCapability(input.config, capability);
-        // Managed image models can be `direct` (openai.image) or `remote_task` (gateway task);
-        // video/audio keep their existing mapping so their behaviour is untouched.
-        const adapterId = capability === "image"
-            ? (managed.execution === "remote_task" ? "shotshot.managed-image" : "openai.image")
-            : capability === "video" ? "openai.video" : "openai.speech";
-        const adapter = getMediaAdapter(adapterId);
-        if (!adapter || adapter.execution !== managed.execution) throw new Error(i18n.t("apiErrors.noAutomaticAdapter", { model: managed.id }));
-        if (!adapter.generate) throw new Error(i18n.t("apiErrors.modelRequiresRemoteTask", { model: managed.id }));
-        const requestConfig = toManagedRequestConfig(input.config, managed.id);
-        return adapter.generate(toMediaGenerateRequest(input, requestConfig));
-    }
     await assertByokGenerationAllowed(input.modality === "speech" || input.modality === "music" ? "audio" : input.modality);
     const selected = selectedModel(input);
     const requestConfig = resolveModelRequestConfig(input.config, selected);

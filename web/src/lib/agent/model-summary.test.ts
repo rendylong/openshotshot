@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { defaultConfig, type AiConfig } from "@/stores/use-config-store";
-import type { ManagedModelDescriptor } from "@/lib/desktop/managed-model-types";
 import { buildAgentModelSummaries } from "./model-summary";
 
 const config = {
@@ -31,27 +30,6 @@ describe("buildAgentModelSummaries", () => {
         const entry = models.find((m) => m.id === "ch-a::img-a")!;
         expect(entry.provider).toBeUndefined();
         expect("provider" in entry).toBe(false);
-    });
-
-    it("ShotShot 图片模式只暴露托管目录，并标注参考图输入要求", () => {
-        const managed: ManagedModelDescriptor[] = [
-            { id: "managed-text-image", name: "Text Image", capability: "image", execution: "remote_task" },
-            { id: "managed-edit", name: "Image Edit", capability: "image", execution: "remote_task", input_slots: [{ field: "input_urls", kind: "image", required: true, accept_types: ["image/png"] }] },
-        ];
-        const shotshotConfig: AiConfig = {
-            ...config,
-            credentialModes: { ...config.credentialModes, image: "shotshot" },
-            managedModels: { ...config.managedModels, image: "managed-edit" },
-        };
-
-        const models = buildAgentModelSummaries(shotshotConfig, managed);
-
-        expect(models.filter((model) => model.capability === "image")).toEqual([
-            expect.objectContaining({ id: "managed-edit", channelName: "ShotShot", isDefault: true, inputMode: "image", requiresReference: true }),
-            expect.objectContaining({ id: "managed-text-image", channelName: "ShotShot", isDefault: false, inputMode: "text", requiresReference: false }),
-        ]);
-        expect(models.some((model) => model.id === "ch-a::img-a")).toBe(false);
-        expect(models.some((model) => model.id === "ch-b::video-b")).toBe(true);
     });
 
     it("HiAPI 文生图模型在存在配对图生图模型时声明可接收可选参考图", () => {

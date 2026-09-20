@@ -8,7 +8,6 @@ import { Ellipsis, FolderInput, FolderKanban, Frame, PanelLeftClose, PanelLeftOp
 import { ProjectIconBadge } from "@/components/canvas/project-icon-badge";
 import { AppReleaseIndicator } from "@/components/layout/app-release-indicator";
 import { SettingsPopover } from "@/components/layout/settings-popover";
-import { UserMenuButton } from "@/components/layout/user-menu-button";
 import { Spinner } from "@/components/ui/spinner";
 import { UNCATEGORIZED_PROJECT_ID } from "@/lib/canvas/category";
 import { compareCanvasByActivity } from "@/lib/canvas/project-model";
@@ -167,9 +166,7 @@ export function AppSidebar() {
             )}
 
             <div className="flex shrink-0 items-center border-t border-stone-200 p-2 dark:border-stone-800">
-                {Boolean(window.shotshot?.account)
-                    ? <UserMenuButton onOpenChange={setOverlayOpen} collapsed={effectiveCollapsed} />
-                    : <SettingsPopover onOpenChange={setOverlayOpen} collapsed={effectiveCollapsed} />}
+                <SettingsPopover onOpenChange={setOverlayOpen} collapsed={effectiveCollapsed} />
             </div>
         </aside>
     );

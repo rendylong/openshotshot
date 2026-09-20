@@ -1,8 +1,7 @@
 import i18n from "@/i18n";
-import { managedCatalogSnapshot } from "@/lib/desktop/managed-catalog-cache";
 import { resolveModel } from "@/lib/models/model-resolver";
 import { getMediaAdapter } from "@/services/api/media-adapters/registry";
-import { credentialModeFor, DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES, DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES, DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
 import type { RemoteMediaCapability } from "@/types/remote-media-task";
 
 type CanvasMediaGenerationPlanInput = {
@@ -36,40 +35,7 @@ type AdapterRemoteMediaGenerationPlan = {
 
 type CanvasMediaGenerationPlan = DirectMediaGenerationPlan | LegacyRemoteMediaGenerationPlan | AdapterRemoteMediaGenerationPlan;
 
-/** Mirror resolveManagedModelForCapability's selection (preference hit, else first) from the sync snapshot. */
-function managedImageExecution(config: AiConfig) {
-    const models = (managedCatalogSnapshot()?.models ?? []).filter((model) => model.capability === "image");
-    const selected = models.find((model) => model.id === config.managedModels.image) ?? models[0];
-    return selected?.execution;
-}
-
 export function planCanvasMediaGeneration(input: CanvasMediaGenerationPlanInput): CanvasMediaGenerationPlan {
-    if (credentialModeFor(input.config, input.capability === "text" ? "text" : input.capability) === "shotshot") {
-        if (input.pluginHost) throw new Error("managed_scripts_unsupported");
-        if (input.capability === "video") {
-            return {
-                mode: "remote_task",
-                capability: "video",
-                phase: input.phase,
-                adapterId: "openai.video",
-                adapterVersion: 1,
-                timeoutMinutes: DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES,
-            };
-        }
-        // A managed remote_task image model (e.g. the real gpt-image-2) runs through the gateway's
-        // async task pipeline; a direct one keeps the synchronous openai.image path.
-        if (input.capability === "image" && managedImageExecution(input.config) === "remote_task") {
-            return {
-                mode: "remote_task",
-                capability: "image",
-                phase: input.phase,
-                adapterId: "shotshot.managed-image",
-                adapterVersion: 1,
-                timeoutMinutes: DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES,
-            };
-        }
-        return { mode: "direct", capability: input.capability, phase: input.phase };
-    }
     if (input.pluginHost || input.capability === "text") return { mode: "direct" as const, capability: input.capability, phase: input.phase };
     const execution = resolveModelExecution(input.config, input.config.model);
     const requestConfig = resolveModelRequestConfig(input.config, input.config.model);

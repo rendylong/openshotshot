@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { videoModelSelectionPatch } from "@/components/video-settings-panel";
 import { buildInputEvidence } from "@/lib/canvas/canvas-generation-helpers";
 import { getConfiguredAutodlWorkflow } from "@/lib/canvas/autodl-generation-input";
-import { CapabilityModelPicker } from "@/components/managed-model-picker";
+import { ModelPicker } from "@/components/model-picker";
 import { useConfigStore, useEffectiveConfig, modelOptionName, type AiConfig } from "@/stores/use-config-store";
 import { audioConfigPatch, audioOverrideKeys, buildNodeConfig, clearMetadataPatch, hasMetadataOverride, imageOverrideKeys, textOverrideKeys, videoConfigPatch, videoOverrideKeys } from "@/lib/canvas/node-config";
 import { canvasThemes } from "@/lib/canvas-theme";
@@ -171,11 +171,10 @@ export function CanvasConfigNodePanel({ node, isRunning, inputs, inputSummary, o
             <div className="cfg-row" style={{ "--i": 3 } as CSSProperties} onMouseDown={(event) => event.stopPropagation()}>
                 <div className="h-px" style={{ background: theme.node.stroke }} />
                 <div className="mt-1 flex items-center gap-1">
-                    <CapabilityModelPicker
+                    <ModelPicker
                         className={`${ghostModelPickerClass} flex-1`}
                         config={config}
                         value={config.model}
-                        nodeModel={node.metadata?.model}
                         currentLabel={config.model ? modelOptionName(config.model) : undefined}
                         onChange={(model) => onConfigChange(node.id, mode === "video" ? (falModelSelectionPatch(config, model, node.metadata) || videoModelSelectionPatch(config, model)) : (falModelSelectionPatch(config, model, node.metadata) || { model }))}
                         capability={mode}

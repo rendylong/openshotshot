@@ -2,11 +2,9 @@ import axios from "axios";
 
 import i18n from "@/i18n";
 import { audioMimeType, normalizeAudioFormatValue, normalizeAudioSpeedValue, normalizeAudioVoiceValue } from "@/lib/audio-generation";
-import { managedCatalogSnapshot } from "@/lib/desktop/managed-catalog-cache";
 import { requestOpenAISpeech } from "@/services/api/audio";
 import { requestGeminiImages, requestOpenAIImages } from "@/services/api/image";
 import { createOpenAIVideoTask, pollOpenAIVideoTask } from "@/services/api/video";
-import { credentialModeFor } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 
 import type { MediaAdapter, MediaGenerateRequest, MediaTaskQueryResult } from "./types";
@@ -189,11 +187,7 @@ export const openAIImageAdapter: MediaAdapter = {
             quality: typeof request.params.quality === "string" ? request.params.quality : request.config.quality,
             background: typeof request.params.background === "string" ? request.params.background : request.config.background,
         };
-        // Managed requests assemble the canonical spec string from the resolved catalog model's axes.
-        const managedSpec = credentialModeFor(config, "image") === "shotshot"
-            ? managedCatalogSnapshot()?.models.find((model) => model.id === config.model)?.spec
-            : undefined;
-        const images = await requestOpenAIImages(config, withSystemPrompt(config, request.prompt), referenceImages(request.images), selectedCount(request), optionalMask(request.params.mask), { signal: request.signal }, managedSpec);
+        const images = await requestOpenAIImages(config, withSystemPrompt(config, request.prompt), referenceImages(request.images), selectedCount(request), optionalMask(request.params.mask), { signal: request.signal });
         return { kind: "image", sources: images.map((image) => image.dataUrl) };
     },
 };
@@ -218,17 +212,14 @@ export const openAIVideoAdapter: MediaAdapter = {
     version: 1,
     modality: "video",
     execution: "remote_task",
-    submit: async ({ config, prompt, images, audios, videos, params, signal }) => {
+    submit: async ({ config, prompt, images, params, signal }) => {
         const requestConfig = {
             ...config,
             videoSeconds: String(params.seconds ?? config.videoSeconds),
             size: typeof params.size === "string" ? params.size : config.size,
             vquality: typeof params.resolution === "string" ? params.resolution : config.vquality,
         };
-        const task = await createOpenAIVideoTask(requestConfig, requestConfig.model, prompt, referenceImages(images), { signal }, {
-            audioReferences: (audios ?? []).map((source, index) => ({ id: `adapter-audio-${index}`, name: `reference-${index + 1}`, type: source.match(/^data:([^;,]+)/i)?.[1] || "audio/mpeg", url: source })),
-            videoReferences: (videos ?? []).map((source, index) => ({ id: `adapter-video-${index}`, name: `reference-${index + 1}`, type: source.match(/^data:([^;,]+)/i)?.[1] || "video/mp4", url: source })),
-        });
+        const task = await createOpenAIVideoTask(requestConfig, requestConfig.model, prompt, referenceImages(images), { signal });
         return { taskId: task.id };
     },
     query: (request) => queryOpenAIVideo(request),
@@ -303,7 +294,7 @@ export const geminiVideoAdapter: MediaAdapter = {
 };
 
 async function queryOpenAIVideo({ config, taskId, signal, onPhase }: MediaGenerateRequest & { taskId: string }, recoverDelivery = false): Promise<MediaTaskQueryResult> {
-    const state = await pollOpenAIVideoTask(config, { id: taskId, provider: credentialModeFor(config, "video") === "shotshot" ? "shotshot" : "openai", model: config.model }, { signal, onPhase, recoverDelivery });
+    const state = await pollOpenAIVideoTask(config, { id: taskId, provider: "openai", model: config.model }, { signal, onPhase, recoverDelivery });
     if (state.status === "pending") return { status: "pending", phase: state.phase ?? "running" };
     if (state.status === "failed") return state;
     const source = state.result.blob || state.result.url;

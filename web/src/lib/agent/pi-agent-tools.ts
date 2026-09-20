@@ -1116,7 +1116,6 @@ export function buildCanvasTools(context: CanvasToolContext): CanvasAgentTool[] 
                         shotId: shot.shotId,
                         settings: {
                             metadata: { ...metadata, ...(shotReference3dViews && Object.keys(shotReference3dViews).length ? { reference3dViews: shotReference3dViews } : {}) },
-                            ...(model.model?.provider === "shotshot" && model.value ? { managedImageModel: model.value } : {}),
                         },
                     };
                 }));

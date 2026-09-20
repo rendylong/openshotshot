@@ -5,7 +5,6 @@ import { zhipuImageAdapter, zhipuVideoAdapter } from "./glm";
 import { minimaxImageAdapter, minimaxMusicAdapter, minimaxSpeechAdapter, minimaxVideoAdapter } from "./minimax";
 import { geminiImageAdapter, geminiSpeechAdapter, geminiVideoAdapter, openAIImageAdapter, openAISpeechAdapter, openAIVideoAdapter } from "./openai-gemini";
 import { hiapiAudioAdapter, hiapiImageAdapter, hiapiMusicAdapter, hiapiVideoAdapter } from "./hiapi";
-import { managedImageAdapter } from "./managed-image";
 import type { MediaAdapter } from "./types";
 
 import { autodlVideoAdapter } from "./autodl";
@@ -65,5 +64,4 @@ registerMediaAdapters([
     hiapiVideoAdapter,
     hiapiAudioAdapter,
     hiapiMusicAdapter,
-    managedImageAdapter,
 ]);

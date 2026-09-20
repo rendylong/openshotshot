@@ -7,13 +7,13 @@ import type { FalMediaConstraints } from "@/lib/models/fal/profile-types";
 import { readProviderParams, type ProviderOptions } from "@/lib/models/provider-options";
 import { imageToDataUrl } from "@/services/image-storage";
 import type { MediaGenerateRequest } from "@/services/api/media-adapters/types";
-import { credentialModeFor, decodeChannelModel, resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { decodeChannelModel, resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
 import type { ReferenceImage } from "@/types/image";
 
 export function isConfiguredFalModel(config: AiConfig) {
     const channel = resolveModelChannel(config, config.model);
     const capability = channel.models.find(model => model.name === (decodeChannelModel(config.model)?.model || config.model))?.capability;
-    return channel.provider === "fal" && (capability === "image" || capability === "video") && credentialModeFor(config, capability) !== "shotshot";
+    return channel.provider === "fal" && (capability === "image" || capability === "video");
 }
 /** These operations have no admitted fal mask/target contract. Never silently discard them. */
 export function assertFalGenerationOperationSupported(config: AiConfig, operation: "mask" | "plugin-self") {

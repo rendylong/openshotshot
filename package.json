@@ -44,12 +44,6 @@
     "appId": "ai.shotshot.desktop",
     "productName": "ShotShot",
     "asar": true,
-    "protocols": {
-      "name": "ShotShot OAuth callback",
-      "schemes": [
-        "ai.shotshot.desktop"
-      ]
-    },
     "directories": {
       "output": "dist",
       "buildResources": "build"

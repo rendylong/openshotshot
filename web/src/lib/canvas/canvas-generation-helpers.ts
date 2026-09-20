@@ -1,6 +1,6 @@
 import { falNodeConfig } from "./fal-settings";
 import { nanoid } from "nanoid";
-import { credentialModeFor, defaultConfig, resolveModelForCapability, type AiConfig } from "@/stores/use-config-store";
+import { defaultConfig, resolveModelForCapability, type AiConfig } from "@/stores/use-config-store";
 import i18n from "@/i18n";
 import { resolveImageUrl, uploadImage } from "@/services/image-storage";
 import { resolveMediaUrl } from "@/services/file-storage";
@@ -16,7 +16,6 @@ import type { CanvasImageAngleParams } from "@/components/canvas/canvas-node-ang
 import type { ReferenceImage } from "@/types/image";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 import { CanvasNodeType, type CanvasAssistantSession, type CanvasConnection, type CanvasGenerationMode, type CanvasNodeData, type CanvasNodeMetadata } from "@/types/canvas";
-import { managedCatalogSnapshot } from "@/lib/desktop/managed-catalog-cache";
 
 export function imageExtension(dataUrl: string) {
     return dataUrl.match(/^data:image[/]([^;]+)/)?.[1] || dataUrl.match(/image[/]([^;]+)/)?.[1] || "png";
@@ -159,18 +158,11 @@ export function buildInputEvidence(inputs: NodeGenerationInput[], mode: CanvasGe
     };
 }
 
-export function buildGenerationConfig(config: AiConfig, node: CanvasNodeData | undefined, mode: CanvasNodeGenerationMode, managedImageModel?: string): AiConfig {
-    // 节点显式模型若是托管目录 id（Agent 设定或节点面板选择），优先于套餐默认偏好；
-    // 并把请求偏好钉到该模型（托管请求层按 managedModels[capability] 解析），保证节点上的选择真实生效。
-    const requestedManagedModel = credentialModeFor(config, mode) === "shotshot"
-        ? managedCatalogSnapshot()?.models.find((candidate) => candidate.capability === mode && candidate.id === node?.metadata?.model)?.id
-        : undefined;
-    const resolvedManagedModel = managedImageModel || requestedManagedModel;
-    const model = resolvedManagedModel || resolveModelForCapability(config, node?.metadata?.model, mode);
+export function buildGenerationConfig(config: AiConfig, node: CanvasNodeData | undefined, mode: CanvasNodeGenerationMode): AiConfig {
+    const model = resolveModelForCapability(config, node?.metadata?.model, mode);
     return {
         ...config,
         model,
-        ...(resolvedManagedModel ? { managedModels: { ...config.managedModels, [mode]: resolvedManagedModel } } : {}),
         reasoningEffort: node?.metadata?.reasoningEffort || config.reasoningEffort || defaultConfig.reasoningEffort,
         quality: node?.metadata?.quality || config.quality || defaultConfig.quality,
         size: node?.metadata?.size || config.size || defaultConfig.size,

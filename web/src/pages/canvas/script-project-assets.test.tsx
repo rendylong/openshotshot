@@ -7,7 +7,6 @@ import { App as AntApp } from "antd";
 
 import i18n from "@/i18n";
 import { emitCanvasEvent } from "@/lib/canvas/canvas-event-bus";
-import { ensureManagedCatalog, resetManagedCatalogForTests, resetManagedCatalogRuntime } from "@/lib/desktop/managed-catalog-cache";
 import type { CanvasAssetRef } from "@/lib/project-assets/project-asset-types";
 import { deliverRemoteTaskToProject } from "@/lib/canvas/remote-media-task-result";
 import { useAgentStore } from "@/stores/use-agent-store";
@@ -92,8 +91,6 @@ beforeEach(() => {
 
     window.shotshot = { agent: {}, projectAssets: projectAssetsBridge, platform: "darwin" } as unknown as typeof window.shotshot;
     routeOverride.forceDirect = true;
-    resetManagedCatalogForTests();
-    resetManagedCatalogRuntime();
     useRemoteMediaTaskStore.getState().resetForTests();
     submitAdapterRemoteMediaTask.mockReset();
     storeRemoteGeneratedVideo.mockReset();
@@ -214,29 +211,20 @@ const openScriptStudio = () => {
     });
 };
 
-// 托管（credentialMode=shotshot）配置：真实路由规划器据此选择 remote_task（视频恒为远端任务）。
-const useManagedConfig = () => {
+// 远端任务 BYOK 配置：zhipu 视频与 hiapi 图片模型经真实路由规划器解析为 remote_task 适配器。
+const useRemoteChannelConfig = () => {
+    const zhipu = { ...defaultConfig.channels[0]!, id: "zhipu", name: "Zhipu", provider: "zhipu" as const, apiKey: "test-key", models: [{ name: "cogvideox-3", capability: "video" as const }] };
+    const hiapi = { ...defaultConfig.channels[0]!, id: "hiapi", name: "HiAPI", provider: "hiapi" as const, apiKey: "test-key", models: [{ name: "gpt-image-2/image-to-image", capability: "image" as const }] };
     useConfigStore.setState({
         config: {
             ...defaultConfig,
             canvasImageCount: "1",
-            channels: [{ ...defaultConfig.channels[0]!, apiKey: "test-key" }],
-            credentialMode: "shotshot",
-            credentialModes: { agent: "shotshot", image: "shotshot", video: "shotshot", text: "shotshot", audio: "shotshot" },
-            managedModels: { text: "", image: "img-remote", video: "vid-remote", audio: "" },
+            channels: [zhipu, hiapi],
+            model: "zhipu::cogvideox-3",
+            videoModel: "zhipu::cogvideox-3",
+            imageModel: "hiapi::gpt-image-2/image-to-image",
         },
     });
-};
-
-const stubManagedBridge = () => {
-    window.shotshot!.managedModels = {
-        listModels: async () => [
-            { id: "img-remote", name: "Managed Image", capability: "image", execution: "remote_task" },
-            { id: "vid-remote", name: "Managed Video", capability: "video", execution: "remote_task" },
-        ],
-        fetch: async () => { throw new Error("managed transport is stubbed out in tests"); },
-        abort: async () => undefined,
-    };
 };
 
 const gotoComposeStep = async () => {
@@ -398,11 +386,10 @@ describe("script project asset attribution", () => {
         await waitFor(() => expect(scriptNodeOf().metadata?.script?.output.shots[0]?.sfxAudio?.assetRef).toEqual(STORED_AUDIO_REF));
     });
 
-    it("carries video lineage through the managed remote_task channel into the project asset source", async () => {
+    it("carries video lineage through the remote_task adapter channel into the project asset source", async () => {
         // 旗舰链路（credentialMode=shotshot 视频恒为 remote_task）：真实路由规划器 + 真实任务记录 + 真实交付。
         routeOverride.forceDirect = false;
-        useManagedConfig();
-        stubManagedBridge();
+        useRemoteChannelConfig();
         submitAdapterRemoteMediaTask.mockResolvedValue({ taskId: "remote-video-1" });
         storeRemoteGeneratedVideo.mockResolvedValue({ url: "blob:remote-video", storageKey: "video:remote", width: 640, height: 360, bytes: 4, mimeType: "video/mp4", durationMs: 4000 });
         getMediaBlob.mockResolvedValue(new Blob([new Uint8Array([1])], { type: "video/mp4" }));
@@ -431,7 +418,7 @@ describe("script project asset attribution", () => {
             expect(saved?.remoteTaskId).toBe("remote-video-1");
             return saved!;
         });
-        expect(task.adapterId).toBe("openai.video");
+        expect(task.adapterId).toBe("zhipu.video");
         expect(task.target.nodeId).not.toBe("video-1");
         expect(task.scriptSource).toEqual({ scriptNodeId: "script-1", shotId: "shot-1", role: "video", version: 2 });
         // 同步在既有视频节点上打点镜头血统（画布侧再生成靠它反推溯源）。
@@ -452,15 +439,10 @@ describe("script project asset attribution", () => {
         });
     });
 
-    it("carries storyboard provenance through a managed remote_task image model", async () => {
+    it("carries storyboard provenance through a remote_task image model", async () => {
         routeOverride.forceDirect = false;
-        useManagedConfig();
-        stubManagedBridge();
+        useRemoteChannelConfig();
         submitAdapterRemoteMediaTask.mockResolvedValue({ taskId: "remote-sb-1" });
-        // 托管镜像模型的同步快照必须先就绪（路由规划器同步读取）。
-        await act(async () => {
-            await ensureManagedCatalog();
-        });
         const script = createEmptyScriptData();
         script.entityIds = ["ent-1"];
         script.template = { storyboardFirst: true };
@@ -491,7 +473,7 @@ describe("script project asset attribution", () => {
             expect(saved?.remoteTaskId).toBe("remote-sb-1");
             return saved!;
         });
-        expect(task.adapterId).toBe("shotshot.managed-image");
+        expect(task.adapterId).toBe("hiapi.image");
         expect(task.scriptSource).toEqual({ scriptNodeId: "script-1", shotId: "shot-1", role: "storyboard" });
 
         // 同步 create 路径同样给新视频节点打上镜头血统（生成视图动作条「批量生成剩余视频」→ 幂等同步展开）。
@@ -531,10 +513,9 @@ describe("script project asset attribution", () => {
         expect(writeContext.source).toEqual({ type: "generated", canvasId: "canvas-1", nodeId: writeContext.nodeId, scriptNodeId: "script-1", shotId: "shot-1", role: "video", version: 1 });
     });
 
-    it("carries lineage when a failed script shot video is retried through the managed remote_task channel", async () => {
+    it("carries lineage when a failed script shot video is retried through the remote_task channel", async () => {
         routeOverride.forceDirect = false;
-        useManagedConfig();
-        stubManagedBridge();
+        useRemoteChannelConfig();
         submitAdapterRemoteMediaTask.mockResolvedValue({ taskId: "remote-retry-1" });
         storeRemoteGeneratedVideo.mockResolvedValue({ url: "blob:remote-retry", storageKey: "video:remote-retry", width: 640, height: 360, bytes: 4, mimeType: "video/mp4", durationMs: 4000 });
         getMediaBlob.mockResolvedValue(new Blob([new Uint8Array([1])], { type: "video/mp4" }));
@@ -565,7 +546,7 @@ describe("script project asset attribution", () => {
             expect(saved?.remoteTaskId).toBe("remote-retry-1");
             return saved!;
         });
-        expect(task.adapterId).toBe("openai.video");
+        expect(task.adapterId).toBe("zhipu.video");
         expect(task.scriptSource).toEqual({ scriptNodeId: "script-1", shotId: "shot-1", role: "video", version: 1 });
 
         await act(async () => {

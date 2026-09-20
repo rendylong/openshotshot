@@ -1,26 +1,27 @@
-import { describe, expect, it, test, vi } from "vitest";
+import { describe, expect, it, test } from "vitest";
 
 import { buildModelsFromConfig } from "@/lib/agent/pi-provider-map";
 
 const baseConfig = {
-    credentialMode: "byok" as const,
+    source: "byok" as const,
     model: "gpt-5.5",
     baseUrl: "https://api.openai.com",
     apiKey: "secret",
     apiFormat: "openai" as const,
+    agentApiMode: "responses" as const,
     supportsImageInput: false,
 };
 
 describe("Agent provider protocol", () => {
     test("uses the Responses API for OpenAI-format Agent models by default", () => {
-        const { model } = buildModelsFromConfig({ ...baseConfig, agentApiMode: "responses" } as never);
+        const { model } = buildModelsFromConfig({ ...baseConfig, agentApiMode: "responses" });
 
         expect(model.api).toBe("openai-responses");
         expect(model.baseUrl).toBe("https://api.openai.com/v1");
     });
 
     test("keeps Chat Completions as an explicit compatibility mode", () => {
-        const { model } = buildModelsFromConfig({ ...baseConfig, agentApiMode: "chat_completions" } as never);
+        const { model } = buildModelsFromConfig({ ...baseConfig, agentApiMode: "chat_completions" });
 
         expect(model.api).toBe("openai-completions");
     });
@@ -39,36 +40,15 @@ describe("Agent provider protocol", () => {
         expect(model.baseUrl).toBe("https://api.deepseek.com");
     });
 
-    test("builds a managed provider with main-owned async authentication", async () => {
-        const resolveApiKey = vi.fn(async () => "managed-secret");
-        const { models, model } = buildModelsFromConfig(
-            { credentialMode: "shotshot", model: "managed-text", apiFormat: "openai", agentApiMode: "chat_completions" },
-            { baseUrl: "https://gateway.example", resolveApiKey, inputModalities: ["text"] },
-        );
-        const provider = models.getProvider(model.provider)!;
-
-        expect(model).toMatchObject({ provider: "shotshot-cloud", baseUrl: "https://gateway.example/v1", api: "openai-completions" });
-        expect(model.input).toEqual(["text"]);
-        await expect(provider.auth?.apiKey?.resolve({} as never)).resolves.toEqual({ auth: { apiKey: "managed-secret" } });
-        expect(resolveApiKey).toHaveBeenCalledWith("managed-text");
-    });
-
-    test("maps a resolved managed descriptor with image input onto the Pi model", () => {
-        const { model } = buildModelsFromConfig(
-            { credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions" },
-            { baseUrl: "https://gateway.example", resolveApiKey: async () => "managed-secret", inputModalities: ["text", "image"] },
-        );
+    test("maps declared image-input support onto the Pi model", () => {
+        const { model } = buildModelsFromConfig({ ...baseConfig, supportsImageInput: true });
 
         expect(model.input).toEqual(["text", "image"]);
-    });
-
-    test("refuses to construct a managed provider without main-process access", () => {
-        expect(() => buildModelsFromConfig({ credentialMode: "shotshot", model: "managed-text", apiFormat: "openai", agentApiMode: "chat_completions" })).toThrow("managed_provider_unavailable");
     });
 });
 
 it.each(["https://openrouter.ai/api/v1", "https://proxy.example/router"])("uses OpenRouter Chat Completions at %s without mutating preferences", (baseUrl) => {
-    const config = { credentialMode: "byok" as const, provider: "openrouter" as const,
+    const config = { source: "byok" as const, provider: "openrouter" as const,
         model: "a/model:free", apiKey: "fixture-key", baseUrl,
         apiFormat: "openai" as const, agentApiMode: "responses" as const, supportsImageInput: true };
     const { model } = buildModelsFromConfig(config);

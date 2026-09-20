@@ -12,14 +12,13 @@ import type { CanvasConnection, CanvasNodeData, CanvasNodeMetadata, ContextMenuS
 import type { AgentFileContent, AgentProjectSummary, AgentGenerationTask, AgentScriptEntitySummary } from "@/lib/agent/pi-agent-types";
 import type { RemoteMediaTask, RemoteMediaTaskStatus } from "@/types/remote-media-task";
 import { buildAgentModelSummaries } from "@/lib/agent/model-summary";
-import { ensureManagedCatalog, managedCatalogSnapshot, subscribeManagedCatalog } from "@/lib/desktop/managed-catalog-cache";
 import { useProjectStore } from "@/stores/canvas/use-project-store";
 import { agentOpRouter, takeFreshCanvasStateIfStale } from "@/lib/agent/agent-op-router";
 import { useScriptEntityStore } from "@/stores/use-script-entity-store";
 import { useRemoteMediaTaskStore } from "@/stores/use-remote-media-task-store";
 
 type GenerateNodeRef = MutableRefObject<((nodeId: string, mode: CanvasNodeGenerationMode, prompt: string) => Promise<void>) | null>;
-type GenerateStoryboardRef = MutableRefObject<((scriptNodeId: string, shotId: string, settings: { metadata: Partial<CanvasNodeMetadata>; managedImageModel?: string }) => void) | null>;
+type GenerateStoryboardRef = MutableRefObject<((scriptNodeId: string, shotId: string, settings: { metadata: Partial<CanvasNodeMetadata> }) => void) | null>;
 
 type AgentBridgeParams = {
     projectId: string;
@@ -323,22 +322,11 @@ export function useAgentBridge(params: AgentBridgeParams) {
 
         const push = () => {
             const config = useConfigStore.getState().config;
-            const needsManagedCatalog = (["text", "image", "video", "audio"] as const)
-                .some((capability) => config.credentialModes[capability] === "shotshot");
-            const catalog = managedCatalogSnapshot();
-            // 冷启动保持主进程目录为“尚未推送”，让工具沿既有降级路径处理；不要把暂时的空数组
-            // 发布成权威空目录。ready 快照由 TTL 决定是否后台刷新，error 不在订阅回调中自旋重试。
-            if (needsManagedCatalog && !catalog) {
-                void ensureManagedCatalog().catch(() => undefined);
-                return;
-            }
-            bridge.setModels!(buildAgentModelSummaries(config, catalog?.models ?? []));
-            if (needsManagedCatalog && catalog?.status === "ready") void ensureManagedCatalog().catch(() => undefined);
+            bridge.setModels!(buildAgentModelSummaries(config));
         };
         push();
         const unsubscribeConfig = useConfigStore.subscribe(push);
-        const unsubscribeCatalog = subscribeManagedCatalog(push);
-        return () => { unsubscribeConfig(); unsubscribeCatalog(); };
+        return () => { unsubscribeConfig(); };
     }, []);
 
     useEffect(() => {

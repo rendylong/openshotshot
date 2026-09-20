@@ -9,7 +9,7 @@ import { planCanvasMediaGeneration } from "@/lib/canvas/canvas-media-generation-
 import { getMediaAdapter } from "@/services/api/media-adapters/registry";
 import type { MediaResult, MediaTaskQueryResult } from "@/services/api/media-adapters/types";
 import { queryAdapterRemoteMediaTask, submitAdapterRemoteMediaTask, submitRemoteMediaTask } from "@/services/api/remote-media-task";
-import { credentialModeFor, DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES, DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES, boolConfig, decodeChannelModel, resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
+import { DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES, DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES, boolConfig, decodeChannelModel, resolveModelChannel, resolveModelRequestConfig, type AiConfig } from "@/stores/use-config-store";
 import { useRemoteMediaTaskStore } from "@/stores/use-remote-media-task-store";
 import { prepareAutodlGenerationRequest } from "@/lib/canvas/autodl-generation-input";
 import { buildAutodlVideoBody } from "@/services/api/media-adapters/autodl";
@@ -17,7 +17,6 @@ import type { MediaGenerateRequest } from "@/services/api/media-adapters/types";
 import type { ReferenceAudio, ReferenceVideo } from "@/types/media";
 import type { ReferenceImage } from "@/types/image";
 import { isRemoteMediaTask, type CreateRemoteTaskInput, type RemoteMediaCapability, type RemoteMediaTask, type RemoteMediaTaskPatch, type RemoteMediaTaskRunnerDeps, type RemoteMediaTaskStatus, type RemoteMediaTaskTarget, type RemoteTaskDeliveryOutcome, type RemoteTaskScriptSource, type RemoteTaskSubmitResult, type RemoteTaskQueryResult } from "@/types/remote-media-task";
-import { managedErrorStatus, resolveManagedModelForCapability, toManagedRequestConfig } from "@/services/api/model-transport";
 
 export type { RemoteMediaTaskRunnerDeps };
 
@@ -125,7 +124,7 @@ async function submitWithRetry(input: {
                 }
                 continue;
             }
-            if (!isNetworkError(error) && !(idempotent && isTransientGatewayError(error))) return { kind: "failed", error: errorMessage(error) };
+            if (!isNetworkError(error)) return { kind: "failed", error: errorMessage(error) };
             if (budget <= 0) return { kind: "submission_unknown", error: unknownCopy };
             budget -= 1;
             try {
@@ -215,12 +214,8 @@ export async function startRemoteCanvasMediaTask(input: StartRemoteCanvasMediaTa
     const adapterProtocol = "adapterId" in execution ? execution : undefined;
     const remote = "remote" in execution ? execution.remote : undefined;
 
-    const managed = credentialModeFor(input.config, input.capability) === "shotshot";
-    const managedModel = managed ? (await resolveManagedModelForCapability(input.config, input.capability)).id : "";
-    const requestConfig = managed
-        ? toManagedRequestConfig(input.config, managedModel)
-        : resolveModelRequestConfig(input.config, input.config.model);
-    const channel = managed ? null : resolveModelChannel(input.config, input.config.model);
+    const requestConfig = resolveModelRequestConfig(input.config, input.config.model);
+    const channel = resolveModelChannel(input.config, input.config.model);
     const protocol = adapterProtocol
         ? { adapterId: adapterProtocol.adapterId, adapterVersion: adapterProtocol.adapterVersion }
         : { queryScriptSnapshot: remote!.queryScript };
@@ -239,7 +234,7 @@ export async function startRemoteCanvasMediaTask(input: StartRemoteCanvasMediaTa
     const task = deps.createTask({
         capability: input.capability,
         target: input.target,
-        channelId: managed ? "shotshot-managed" : decodeChannelModel(input.config.model)?.channelId || channel!.id,
+        channelId: decodeChannelModel(input.config.model)?.channelId || channel!.id,
         modelName: requestConfig.model,
         baseUrlSnapshot: requestConfig.baseUrl,
         ...protocol,
@@ -358,20 +353,9 @@ function isNetworkError(error: unknown) {
     return error instanceof TypeError && /fetch|network|load failed/i.test(error.message);
 }
 
-/** Managed gateway 5xx/429 are transient saturation responses (e.g. database pool exhaustion), not
- * protocol failures, so they reuse the network backoff instead of failing the task terminally. */
-function isTransientGatewayError(error: unknown) {
-    const status = managedErrorStatus(error);
-    return status !== undefined && (status === 429 || status >= 500);
-}
-
 function queryConfig(task: RemoteMediaTask, config: AiConfig): AiConfig | null {
     // A submitted task keeps its original source so changing settings cannot
     // strand an in-flight request or accidentally send it to another provider.
-    if (task.channelId === "shotshot-managed") {
-        // 提交时模型已锁定（task.modelName）；偏好后续变化或解析层回退不得打断在途任务。
-        return toManagedRequestConfig(config, task.modelName);
-    }
     const channel = config.channels.find((item) => item.id === task.channelId);
     if (!channel?.apiKey.trim()) return null;
     return {
@@ -724,11 +708,6 @@ export function createRemoteMediaTaskRunner(deps: RemoteMediaTaskRunnerDeps): Re
                 }
 
                 delivering = true;
-                if (task.channelId === "shotshot-managed") {
-                    const saving = await syncIntermediate(task.id, { phase: "saving", recoveryPhase: undefined }, owner);
-                    if (!saving || !ensureActive(task.id, controller, owner)) return;
-                    task = saving;
-                }
                 const deliveryTask = task;
                 const deliveryResult = adapterTask ? adapterDeliveryValue(result.result as MediaResult) : result.result;
                 const delivered = await abortable(deps.deliver(task, deliveryResult, {
@@ -753,7 +732,7 @@ export function createRemoteMediaTaskRunner(deps: RemoteMediaTaskRunnerDeps): Re
                     await finishTerminal(task.id, { status: "failed", error: errorMessage(error) });
                     return;
                 }
-                if (!isNetworkError(error) && !isTransientGatewayError(error)) {
+                if (!isNetworkError(error)) {
                     await finishTerminal(task.id, { status: "failed", error: errorMessage(error) });
                     return;
                 }

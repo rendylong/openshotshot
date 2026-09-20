@@ -6,7 +6,7 @@ import { audioMimeType, normalizeAudioFormatValue, normalizeAudioSpeedValue, nor
 import { resolveModel } from "@/lib/models/model-resolver";
 import { uploadMediaFile, uploadRemoteMediaFile, type RemoteMediaStorageContext, type UploadedFile } from "@/services/file-storage";
 import { storeCanvasMedia, type ProjectAssetWriteContext, type StoredCanvasMedia } from "@/services/project-asset-storage";
-import { buildApiUrl, credentialModeFor, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
+import { buildApiUrl, resolveModelChannel, resolveModelExecution, resolveModelRequestConfig, resolveModelScript, type AiConfig } from "@/stores/use-config-store";
 import { generateResolvedMedia } from "./media-dispatcher";
 import { requestModel } from "./model-transport";
 
@@ -117,7 +117,6 @@ export async function storeRemoteGeneratedAudio(blob: Blob, format: string, cont
 
 function assertAudioConfig(config: AiConfig, model: string) {
     if (!model) throw new Error(apiText("audioModelRequired"));
-    if (credentialModeFor(config, "audio") === "shotshot") return;
     if (!config.baseUrl.trim()) throw new Error(apiText("baseUrlRequired"));
     if (!config.apiKey.trim()) throw new Error(apiText("apiKeyRequired"));
     if (config.apiFormat === "gemini") throw new Error(apiText("geminiAudioUnsupported"));

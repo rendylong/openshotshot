@@ -10,12 +10,11 @@ import { attachmentToImageContent } from "@/lib/agent/agent-attachments";
 import { agentOpRouter } from "@/lib/agent/agent-op-router";
 import { normalizeSkillCommand } from "@/lib/skills/skill-format";
 import { canvasTitleFromPrompt, generateCanvasTitle } from "@/lib/canvas/canvas-title";
-import { managedCatalogSnapshot } from "@/lib/desktop/managed-catalog-cache";
 import { findProject } from "@/lib/canvas/project-model";
 import { useProjectStore } from "@/stores/canvas/use-project-store";
 import { randomId } from "@/lib/utils";
 import { configureLocalSkillSources } from "@/services/local-skill";
-import { credentialModeFor, resolveModelChannel, resolveModelExecution, resolveModelForCapability, useConfigStore } from "@/stores/use-config-store";
+import { resolveModelChannel, resolveModelExecution, resolveModelForCapability, useConfigStore } from "@/stores/use-config-store";
 import { useAgentStore, type AgentAttachment, type AgentChatItem } from "@/stores/use-agent-store";
 import { useLocalSkillStore } from "@/stores/use-local-skill-store";
 import { usePiHistoryStore } from "@/stores/use-pi-history-store";
@@ -136,18 +135,10 @@ export function modelNotReadyKey() {
     const state = useAiSourceStore.getState();
     if (state.preferences.selections.agent || state.status !== "ready" || state.error || state.applying) return "aiSources.sourceNotReady";
     const config = useConfigStore.getState().config;
-    if (credentialModeFor(config, "agent") === "shotshot") {
-        const snapshot = managedCatalogSnapshot();
-        if (!snapshot || snapshot.status === "error") return "config.managed.fetchFailed";
-        if (!snapshot.models.some((model) => model.capability === "text")) return "config.managed.agentMissingText";
-        return "agent.pi.notConfigured";
-    }
-    if (credentialModeFor(config, "agent") !== "shotshot") {
-        const value = resolveModelForCapability(config, config.agentModel, "text");
-        const channel = resolveModelChannel(config, value);
-        const model = resolveModelExecution(config, value);
-        if (channel.provider === "openrouter" && (!model || !canUseAsAgent(channel, model))) return "config.catalog.agentRequiresTools";
-    }
+    const value = resolveModelForCapability(config, config.agentModel, "text");
+    const channel = resolveModelChannel(config, value);
+    const model = resolveModelExecution(config, value);
+    if (channel.provider === "openrouter" && (!model || !canUseAsAgent(channel, model))) return "config.catalog.agentRequiresTools";
     return "agent.pi.notConfigured";
 }
 

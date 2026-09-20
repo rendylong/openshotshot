@@ -19,19 +19,24 @@ export const AGENT_ATTACHMENTS_CUSTOM_TYPE = "shotshot.attachments";
 export type PiAgentPromptFile = { assetId: string; relativePath: string; name: string; kind: AgentAttachmentKind; mimeType: string; size: number };
 
 /** 解析后的文本模型配置（来自 use-config-store.resolveModelRequestConfig）。 */
-export type ResolvedTextModelConfig = ByokTextModelConfig | ShotshotTextModelConfig | { source: "chatgpt"; credentialMode?: never; model: string } | { source: "platform"; credentialMode?: never; model: string };
-
-export type ShotshotTextModelConfig = {
-    source?: never;
-    credentialMode: "shotshot";
-    model: string;
-    apiFormat: "openai";
-    agentApiMode: "chat_completions";
-};
+export type ResolvedTextModelConfig =
+    | { source: "chatgpt"; model: string }
+    | {
+          source: "byok";
+          model: string;
+          baseUrl: string;
+          apiKey: string;
+          apiFormat: "openai" | "gemini";
+          agentApiMode: "responses" | "chat_completions";
+          /** OpenRouter requires confirmed catalog input modalities; never infer from its ID. */
+          supportsImageInput: boolean;
+          /** Model emits reasoning; enables reasoning request params in agent responses mode. */
+          supportsReasoning?: boolean;
+          provider?: ChannelProvider;
+      };
 
 export type ByokTextModelConfig = {
     source?: "byok";
-    credentialMode?: "byok";
     model: string;
     baseUrl: string;
     apiKey: string;
@@ -309,9 +314,7 @@ export type AgentMemoryBridge = {
 declare global {
     interface Window {
         shotshot?: {
-            account?: import("../desktop/account-bridge").AccountBridge;
             appRelease?: import("../desktop/app-release-bridge").AppReleaseBridge;
-            managedModels?: import("../desktop/managed-model-types").ManagedModelsBridge;
             chatgpt?: ChatGptBridge;
             agent: AgentBridge;
             skills: SkillsBridge;

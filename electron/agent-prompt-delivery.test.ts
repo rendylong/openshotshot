@@ -45,7 +45,7 @@ it("delivers refreshed host instructions to the provider after session restore a
         },
     });
     try {
-        await registry.setModelConfig({ model: "faux-1", baseUrl: "http://localhost:0", apiKey: "unused", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true });
+        await registry.setModelConfig({ source: "byok", model: "faux-1", baseUrl: "http://localhost:0", apiKey: "unused", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true });
         const { sessionId } = await registry.createSession({ scope: { projectId: "p", canvasId: "c" } });
         faux.setResponses([fauxAssistantMessage("blob URL 无法读取，请导出后给我。")]);
         await registry.prompt(sessionId, "读图");
@@ -84,7 +84,7 @@ it("delivers view_image and the typed image block for a multimodal BYOK model wi
     const modelRuntime = await ModelRuntime.create({ authPath: join(root, "auth.json"), modelsPath: join(root, "models.json"), refreshOnCreate: false });
     const settingsManager = SettingsManager.inMemory();
     const stubRuntime = { getModel: () => undefined, registerNativeProvider: () => undefined } as unknown as ModelRuntimeType;
-    const byokConfig = { model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai" as const, agentApiMode: "chat_completions" as const, supportsImageInput: true };
+    const byokConfig = { source: "byok" as const, model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai" as const, agentApiMode: "chat_completions" as const, supportsImageInput: true };
     const byokModel = await resolveAgentModel(byokConfig, stubRuntime);
     const faux = fauxProvider({ provider: byokModel.provider });
     modelRuntime.registerNativeProvider(faux.provider);
@@ -121,7 +121,7 @@ it("delivers view_image and the typed image block for a multimodal BYOK model wi
         },
     });
     try {
-        await registry.setModelConfig({ model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true });
+        await registry.setModelConfig({ source: "byok", model: "minimax-m3", baseUrl: "https://gateway.example", apiKey: "main-process-secret", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true });
         const { sessionId } = await registry.createSession({ scope: { projectId: "p", canvasId: "c" } });
         faux.setResponses([
             (context) => { capture(context); return fauxAssistantMessage(fauxToolCall("view_image", { nodeId: "fixture" }), { stopReason: "toolUse" }); },

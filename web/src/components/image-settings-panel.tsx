@@ -2,21 +2,16 @@ import type { CanvasNodeMetadata } from "@/types/canvas";
 import { FalGenerationSettings } from "@/components/canvas/fal-generation-settings";
 import { configuredFalProfile } from "@/lib/canvas/fal-settings";
 import type { ProviderOptions } from "@/lib/models/provider-options";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Switch } from "antd";
 import { useTranslation } from "react-i18next";
-
-import { MANAGED_SPEC_RATIOS } from "@/services/api/image";
 
 import i18n from "@/i18n";
 import { cn } from "@/lib/utils";
 import { type CanvasTheme } from "@/lib/canvas-theme";
 import { OptionPill, SettingGroup, QuickPillRow } from "@/components/ui/settings-controls";
 import { GenerationDefaultsFooter } from "@/components/generation-defaults-footer";
-import { useManagedCatalog } from "@/lib/desktop/use-managed-catalog";
-import type { ManagedCatalogSnapshot } from "@/lib/desktop/managed-catalog-cache";
-import type { ManagedModelDescriptor } from "@/lib/desktop/managed-model-types";
-import { useConfigStore, credentialModeFor } from "@/stores/use-config-store";
+import { useConfigStore } from "@/stores/use-config-store";
 import type { AiConfig } from "@/stores/use-config-store";
 
 const qualityOptions = [
@@ -46,36 +41,6 @@ const aspectOptions = [
     { value: "auto", label: "auto", width: 0, height: 0, icon: "auto" },
 ];
 const ratioTiles = aspectOptions.filter((item) => item.icon === "auto" || !item.label.includes("("));
-/** 托管回退路径只能表达设计固定的比例子集：AUTO 与自定义 W×H 在托管线路上无对应键。 */
-const managedFallbackRatioItems = ratioTiles.filter((item) => item.value !== "auto" && (MANAGED_SPEC_RATIOS as readonly string[]).includes(item.value));
-
-type RatioTile = (typeof aspectOptions)[number];
-/** 托管档位词表固定（spec §5.2/§5.3）：未声明的档位灰置并给出原因，而不是凭空消失。 */
-const MANAGED_TIER_ORDER = ["1K", "2K", "4K"];
-const MANAGED_QUALITY_ORDER = ["standard", "fine", "ultra"];
-
-/**
- * 与请求路径 `resolveManagedModelForCapability` 同构：偏好命中优先，否则取该能力目录首项。
- * 目录未水合（null）或读取失败时返回 undefined，调用方回退全局表格。
- */
-function resolveManagedImageModel(config: AiConfig, catalog: ManagedCatalogSnapshot | null): ManagedModelDescriptor | undefined {
-    if (!catalog || catalog.status === "error" || !catalog.models.length) return undefined;
-    // 托管图片分派器按 model.execution 选适配器（direct→openai.image，remote_task→shotshot.managed-image），
-    // 两类模型都可执行，因此都按其 spec 渲染面板。
-    const available = catalog.models.filter((model) => model.capability === "image");
-    return available.find((model) => model.id === config.managedModels.image) ?? available[0];
-}
-
-/** 声明的比例按目录顺序映射到既有 ratio tile；固定子集之外的比例兜底成通用方形块，不丢选项。 */
-function managedRatioTile(ratio: string): RatioTile {
-    return aspectOptions.find((item) => item.icon !== "auto" && item.value === ratio)
-        ?? { value: ratio, label: ratio, width: 1024, height: 1024, icon: "square" };
-}
-
-/** 已知质量 token 走 i18n；声明但词表之外的 token 原样渲染，绝不静默消失。 */
-function managedAxisLabel(value: string, axis: "resolutions" | "qualities"): string {
-    return axis === "qualities" && MANAGED_QUALITY_ORDER.includes(value) ? i18n.t(`settingsPanels.common.${value}`) : value;
-}
 
 export const imageQualityOptions = qualityOptions.map((item) => ({ value: item.value, get label() { return i18n.t(`settingsPanels.common.${item.value}`); } }));
 export const imageAspectOptions = aspectOptions.map((item) => ({ value: item.size || item.value, label: item.label }));
@@ -111,46 +76,6 @@ export function ImageSettingsPanel({ config, providerOptions, onMetadataChange, 
     const isCustomSize = activeSize !== "auto" && !selectedAspect;
     const dimensions = readSizeDimensions(activeSize, quality, selectedAspect || aspectOptions[0]);
 
-    // —— 托管图片：按所选模型的 spec 决定渲染哪些轴（请求路径用同一模型解析，二者必须一致）——
-    const managedCatalog = useManagedCatalog();
-    const managed = credentialModeFor(config, "image") === "shotshot";
-    const managedModel = managed ? resolveManagedImageModel(config, managedCatalog) : undefined;
-    const managedSpec = managedModel?.spec;
-    // 空 spec（无任何轴取值）等同「无规格」：回退全局表格，避免空面板。
-    const specDriven = Boolean(managedSpec && (managedSpec.aspectRatios?.length || managedSpec.resolutions?.length || managedSpec.qualities?.length));
-    const twoAxes = Boolean(managedSpec?.resolutions?.length && managedSpec.qualities?.length);
-    // 托管回退（无 spec）只能列设计固定子集：AUTO/自定义 W×H 在托管线路上无法表达。
-    const ratioItems = specDriven ? (managedSpec?.aspectRatios ?? []).map(managedRatioTile) : managed ? managedFallbackRatioItems : ratioTiles;
-    // 轴与取值未声明即不渲染该控件；两轴并存时整体不可用（请求侧会抛错，UI 不能假装可选）。
-    const showRatioGroup = !twoAxes && (!specDriven || ratioItems.length > 0);
-    const secondAxis: "global" | "resolutions" | "qualities" | "none" = !specDriven
-        ? "global"
-        : twoAxes
-            ? "none"
-            : managedSpec?.resolutions?.length
-                ? "resolutions"
-                : managedSpec?.qualities?.length
-                    ? "qualities"
-                    : "none";
-    // 第二轴的渲染集合：声明值必须全部出现（按声明顺序），固定词表中未声明的已知值仍灰置展示。
-    const axisVocabulary = secondAxis === "resolutions" ? MANAGED_TIER_ORDER : secondAxis === "qualities" ? MANAGED_QUALITY_ORDER : [];
-    const declaredAxisValues = secondAxis === "resolutions" ? managedSpec?.resolutions ?? [] : secondAxis === "qualities" ? managedSpec?.qualities ?? [] : [];
-    const undeclaredAxisValues = axisVocabulary.filter((value) => !declaredAxisValues.includes(value));
-    const axisValues = [...declaredAxisValues, ...undeclaredAxisValues];
-    // 已知但未声明的档位：灰置 + 可见原因（disabled 元素的原生 title 在多数浏览器不弹出）。
-    const unavailableAxisLabels = undeclaredAxisValues.map((value) => managedAxisLabel(value, secondAxis === "qualities" ? "qualities" : "resolutions"));
-
-    // Finding A：模型声明了唯一第二轴时，config.quality 必须落在声明集合内，否则请求侧会以「裸比例无定价行」拒绝。
-    // 面板拥有选择权：把缺失/未声明的值补写为第一个声明值，让面板选中态与请求键按构造一致（不是仅渲染选中）。
-    const declaredAxisKey = declaredAxisValues.join("|");
-    useEffect(() => {
-        if (!declaredAxisValues.length) return;
-        if (declaredAxisValues.includes(quality)) return;
-        onConfigChange("quality", declaredAxisValues[0]!);
-        // declaredAxisKey 已覆盖 declaredAxisValues 的内容依赖。
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [declaredAxisKey, quality]);
-
     if (profile) {
         return (
             <div className={cn("text-foreground", className)} onMouseDown={(event) => event.stopPropagation()}>
@@ -185,99 +110,63 @@ export function ImageSettingsPanel({ config, providerOptions, onMetadataChange, 
                 if (document.activeElement instanceof HTMLInputElement && event.currentTarget.contains(document.activeElement)) document.activeElement.blur();
             }}
         >
-            {showRatioGroup ? (
-                <SettingGroup title={t("settingsPanels.image.size")}>
-                    <div className="grid grid-cols-4 gap-2">
-                        {ratioItems.map((item) => (
-                            <button
-                                key={item.value}
-                                type="button"
-                                className={cn("flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[10px] border bg-transparent text-xs transition hover:opacity-80", selectedAspect?.value === item.value && "border-foreground border-[1.5px]")}
-                                style={{ borderColor: selectedAspect?.value === item.value ? theme.node.text : theme.node.stroke, background: "transparent", color: theme.node.text }}
-                                onMouseDown={(event) => event.stopPropagation()}
-                                onClick={() => onConfigChange("size", item.size || item.value)}
-                            >
-                                {item.icon === "auto" ? <span className="text-[10px] opacity-60 tracking-wide">AUTO</span> : <AspectIcon type={item.icon} width={item.width} height={item.height} color={theme.node.text} />}
-                                <span>{item.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                    {specDriven || managed ? null : activeSize === "auto" ? (
-                        <p className="mt-1.5 text-[11.5px] text-muted-foreground">{t("settingsPanels.image.modelDecidesSize")}</p>
-                    ) : (
-                        <p className="mt-1.5 text-[11.5px] text-muted-foreground">
-                            {t("settingsPanels.image.outputSize", { size: `${dimensions.width} × ${dimensions.height}` })}
-                            {isCustomSize ? ` · ${t("settingsPanels.common.custom")}` : ""}
-                        </p>
-                    )}
-                    {specDriven || managed ? null : (
-                        <>
-                            <button
-                                type="button"
-                                className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                                onClick={() => setCustomOpen(!customOpen)}
-                            >
-                                <span className={cn("inline-block text-[10px] transition-transform", disclosureOpen && "rotate-90")}>▶</span>
-                                {t("settingsPanels.image.customSize")}
-                            </button>
-                            {disclosureOpen ? (
-                                <div className="mt-2 space-y-2">
-                                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                                        <DimensionInput prefix="W" value={dimensions.width} disabled={activeSize === "auto"} theme={theme} onChange={(value) => updateDimension("width", value)} />
-                                        <span className="text-lg opacity-45">↔</span>
-                                        <DimensionInput prefix="H" value={dimensions.height} disabled={activeSize === "auto"} theme={theme} onChange={(value) => updateDimension("height", value)} />
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-xs text-muted-foreground">{t("settingsPanels.image.align16")}</span>
-                                        <Switch size="small" checked={snapDimensionToStep} onChange={setSnapDimensionToStep} />
-                                    </div>
-                                </div>
-                            ) : null}
-                        </>
-                    )}
-                </SettingGroup>
-            ) : null}
-
-            {secondAxis !== "none" ? (
-                <SettingGroup title={secondAxis === "resolutions" ? t("settingsPanels.image.resolution") : t("settingsPanels.image.quality")}>
-                    {secondAxis === "global" ? (
-                        <div className="grid grid-cols-4 gap-1.5">
-                            {qualityOptions.map((item) => (
-                                <OptionPill key={item.value} selected={quality === item.value} onClick={() => onConfigChange("quality", item.value)} className="px-1.5">
-                                    {t(`settingsPanels.common.${item.value}`)}
-                                    {item.tier ? <span className="text-[10px] opacity-55">{item.tier}</span> : null}
-                                </OptionPill>
-                            ))}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="grid grid-cols-3 gap-1.5">
-                                {axisValues.map((value) => {
-                                    const declared = declaredAxisValues.includes(value);
-                                    const label = managedAxisLabel(value, secondAxis === "qualities" ? "qualities" : "resolutions");
-                                    return (
-                                        <OptionPill
-                                            key={value}
-                                            selected={quality === value}
-                                            disabled={!declared}
-                                            title={declared ? undefined : t("settingsPanels.image.axisUnavailable", { axis: label })}
-                                            onClick={() => onConfigChange("quality", value)}
-                                            className="px-1.5"
-                                        >
-                                            {label}
-                                        </OptionPill>
-                                    );
-                                })}
+            <SettingGroup title={t("settingsPanels.image.size")}>
+                <div className="grid grid-cols-4 gap-2">
+                    {ratioTiles.map((item) => (
+                        <button
+                            key={item.value}
+                            type="button"
+                            className={cn("flex h-12 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-[10px] border bg-transparent text-xs transition hover:opacity-80", selectedAspect?.value === item.value && "border-foreground border-[1.5px]")}
+                            style={{ borderColor: selectedAspect?.value === item.value ? theme.node.text : theme.node.stroke, background: "transparent", color: theme.node.text }}
+                            onMouseDown={(event) => event.stopPropagation()}
+                            onClick={() => onConfigChange("size", item.size || item.value)}
+                        >
+                            {item.icon === "auto" ? <span className="text-[10px] opacity-60 tracking-wide">AUTO</span> : <AspectIcon type={item.icon} width={item.width} height={item.height} color={theme.node.text} />}
+                            <span>{item.label}</span>
+                        </button>
+                    ))}
+                </div>
+                {activeSize === "auto" ? (
+                    <p className="mt-1.5 text-[11.5px] text-muted-foreground">{t("settingsPanels.image.modelDecidesSize")}</p>
+                ) : (
+                    <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                        {t("settingsPanels.image.outputSize", { size: `${dimensions.width} × ${dimensions.height}` })}
+                        {isCustomSize ? ` · ${t("settingsPanels.common.custom")}` : ""}
+                    </p>
+                )}
+                    <button
+                        type="button"
+                        className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        onClick={() => setCustomOpen(!customOpen)}
+                    >
+                        <span className={cn("inline-block text-[10px] transition-transform", disclosureOpen && "rotate-90")}>▶</span>
+                        {t("settingsPanels.image.customSize")}
+                    </button>
+                    {disclosureOpen ? (
+                        <div className="mt-2 space-y-2">
+                            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                                <DimensionInput prefix="W" value={dimensions.width} disabled={activeSize === "auto"} theme={theme} onChange={(value) => updateDimension("width", value)} />
+                                <span className="text-lg opacity-45">↔</span>
+                                <DimensionInput prefix="H" value={dimensions.height} disabled={activeSize === "auto"} theme={theme} onChange={(value) => updateDimension("height", value)} />
                             </div>
-                            {unavailableAxisLabels.length ? (
-                                <p className="text-[11.5px] text-muted-foreground">{t("settingsPanels.image.axisUnavailable", { axis: unavailableAxisLabels.join(t("settingsPanels.image.axisSeparator")) })}</p>
-                            ) : null}
-                        </>
-                    )}
-                </SettingGroup>
-            ) : null}
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-xs text-muted-foreground">{t("settingsPanels.image.align16")}</span>
+                                <Switch size="small" checked={snapDimensionToStep} onChange={setSnapDimensionToStep} />
+                            </div>
+                        </div>
+                    ) : null}
+            </SettingGroup>
 
-            {twoAxes ? <p className="text-[11.5px] text-muted-foreground">{t("settingsPanels.image.twoAxesUnsupported")}</p> : null}
+            <SettingGroup title={t("settingsPanels.image.quality")}>
+                <div className="grid grid-cols-4 gap-1.5">
+                    {qualityOptions.map((item) => (
+                        <OptionPill key={item.value} selected={quality === item.value} onClick={() => onConfigChange("quality", item.value)} className="px-1.5">
+                            {t(`settingsPanels.common.${item.value}`)}
+                            {item.tier ? <span className="text-[10px] opacity-55">{item.tier}</span> : null}
+                        </OptionPill>
+                    ))}
+                </div>
+            </SettingGroup>
 
             <SettingGroup title={t("settingsPanels.image.count")}>
                 {countLocked ? (

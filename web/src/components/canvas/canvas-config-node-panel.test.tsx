@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import i18n from "@/i18n";
 import { getGenerationCount } from "@/lib/canvas/canvas-generation-helpers";
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { defaultConfig, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 import { CanvasNodeType, type CanvasNodeData } from "@/types/canvas";
 import type { CanvasNodeMetadata } from "@/types/canvas";
@@ -20,60 +19,8 @@ vi.mock("@/stores/use-config-store", async importOriginal => {
 
 afterEach(() => {
     delete window.shotshot;
-    resetManagedCatalogForTests();
     useConfigStore.setState({ config: defaultConfig });
     effective.config = null;
-});
-
-describe("CanvasConfigNodePanel model picker", () => {
-    it("uses the plan catalog in shotshot mode and updates the managed image preference", async () => {
-        window.shotshot = {
-            agent: {} as never,
-            skills: {} as never,
-            platform: "darwin",
-            managedModels: {
-                listModels: vi.fn(async () => [
-                    { id: "managed-image", name: "Managed Image", capability: "image" as const, execution: "remote_task" as const },
-                    { id: "managed-image-lite", name: "Managed Image Lite", capability: "image" as const, execution: "remote_task" as const },
-                ]),
-                fetch: vi.fn(),
-                abort: vi.fn(),
-            },
-        } as never;
-        const config = {
-            ...defaultConfig,
-            credentialMode: "shotshot" as const,
-            credentialModes: { ...defaultConfig.credentialModes, image: "shotshot" as const },
-            managedModels: { ...defaultConfig.managedModels, image: "managed-image" },
-        };
-        effective.config = config;
-        useConfigStore.setState({ config });
-        await ensureManagedCatalog();
-        const onConfigChange = vi.fn();
-        const node = {
-            id: "config-node",
-            type: CanvasNodeType.Config,
-            title: "Config",
-            position: { x: 0, y: 0 },
-            width: 320,
-            height: 240,
-            metadata: { generationMode: "image" as const, model: defaultConfig.imageModel, prompt: "Create" },
-        } satisfies CanvasNodeData;
-
-        render(
-            <I18nextProvider i18n={i18n}><AntApp>
-                <CanvasConfigNodePanel node={node} inputs={[]} inputSummary={{ textCount: 1, imageCount: 0, videoCount: 0, audioCount: 0 }} isRunning={false} onConfigChange={onConfigChange} onGenerate={vi.fn()} onStop={vi.fn()} onComposerToggle={vi.fn()} />
-            </AntApp></I18nextProvider>,
-        );
-
-        expect(await screen.findByText("Managed Image")).toBeInTheDocument();
-        expect(screen.queryByText(/gpt-image-1/)).not.toBeInTheDocument();
-        fireEvent.click(screen.getByText("Managed Image"));
-        fireEvent.click(await screen.findByText("Managed Image Lite"));
-
-        await waitFor(() => expect(useConfigStore.getState().config.managedModels.image).toBe("managed-image-lite"));
-        expect(onConfigChange).not.toHaveBeenCalledWith("config-node", expect.objectContaining({ model: expect.anything() }));
-    });
 });
 
 const baseNode = (metadata: Partial<CanvasNodeMetadata> = {}): CanvasNodeData => ({

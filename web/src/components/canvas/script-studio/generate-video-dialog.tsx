@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Modal } from "antd";
 
-import { CapabilityModelPicker } from "@/components/managed-model-picker";
+import { ModelPicker } from "@/components/model-picker";
 import { videoModelSelectionPatch } from "@/components/video-settings-panel";
 import { CanvasVideoSettingsPopover } from "../canvas-video-settings-popover";
 import { buildNodeConfig, videoConfigPatch } from "@/lib/canvas/node-config";
 import { falModelSelectionPatch } from "@/lib/canvas/fal-settings";
-import { credentialModeFor, useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
+import { useEffectiveConfig, type AiConfig } from "@/stores/use-config-store";
 import { useConfigStore } from "@/stores/use-config-store";
 import type { CanvasNodeData, CanvasNodeMetadata } from "@/types/canvas";
 
@@ -36,9 +36,7 @@ export function GenerateVideoDialog({ open, mode, shotNo, versionNo, node, onCon
         if (open) setValues({});
     }, [open, node?.id]);
 
-    // 托管模式下 buildNodeConfig 解析不出目录 id（节点显式模型优先显示，与生成侧钉定一致）；BYOK 由解析回退链处理。
-    const managedVideo = credentialModeFor(config, "video") === "shotshot";
-    const dialogModel = values.model || (managedVideo ? node?.metadata?.model : undefined);
+    const dialogModel = values.model;
 
     const displayConfig: AiConfig = useMemo(
         () => ({
@@ -65,10 +63,9 @@ export function GenerateVideoDialog({ open, mode, shotNo, versionNo, node, onCon
             <div className="flex flex-col gap-3 pt-1">
                 <div className="text-xs text-muted-foreground">{t("canvas.scriptCompose.videoSettingsHint", { no: shotNo })}</div>
                 <div className="flex min-w-0 items-center gap-2">
-                    <CapabilityModelPicker
+                    <ModelPicker
                         config={displayConfig}
                         value={displayConfig.model}
-                        nodeModel={dialogModel}
                         capability="video"
                         className="h-9 min-w-0 max-w-[200px] rounded-lg border-border bg-transparent px-2"
                         currentLabel={displayConfig.model}

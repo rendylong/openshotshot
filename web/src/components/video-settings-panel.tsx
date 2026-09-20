@@ -1,7 +1,3 @@
-import { ensureManagedCatalog, invalidateManagedCatalog } from "@/lib/desktop/managed-catalog-cache";
-import { useManagedCatalog } from "@/lib/desktop/use-managed-catalog";
-import { managedVideoSpecs, resolveManagedVideoSettings, selectedManagedVideoSpec } from "@/lib/canvas/managed-video-settings";
-import { credentialModeFor } from "@/stores/use-config-store";
 import { FalGenerationSettings } from "@/components/canvas/fal-generation-settings";
 import { configuredFalProfile } from "@/lib/canvas/fal-settings";
 import type { ProviderOptions } from "@/lib/models/provider-options";
@@ -54,10 +50,6 @@ export function VideoSettingsPanel({ config, providerOptions, onMetadataChange, 
     const { t } = useTranslation();
     const defaults = useConfigStore((state) => state.config);
     const updateConfig = useConfigStore((state) => state.updateConfig);
-    const managed = credentialModeFor(config, "video") === "shotshot";
-    const catalog = useManagedCatalog(managed);
-    const available = catalog?.models.filter(model => model.capability === "video") ?? [];
-    const managedModel = available.find(model => model.id === config.managedModels.video) ?? available[0];
     const workflow = getConfiguredAutodlWorkflow(config);
     const seconds = config.videoSeconds || (workflow?.duration ? String(workflow.duration.default) : "6");
     const size = normalizeVideoSizeValue(config.size);
@@ -69,63 +61,6 @@ export function VideoSettingsPanel({ config, providerOptions, onMetadataChange, 
     };
 
     const profile = configuredFalProfile(config);
-    if (managed) {
-        const specs = managedVideoSpecs(managedModel);
-        const selected = selectedManagedVideoSpec(config, managedModel);
-        const qualities = [...new Set(specs.map(spec => spec.quality))];
-        const quality = selected?.quality ?? (qualities.includes(config.vquality) ? config.vquality : undefined);
-        const ratios = specs.filter(spec => spec.quality === quality);
-        let error: string | undefined;
-        try { resolveManagedVideoSettings(config, managedModel); } catch (cause) { error = (cause as Error).message; }
-        const duration = selected?.duration;
-        return <div className={cn("text-foreground", className)} onMouseDown={event => event.stopPropagation()}>
-            <SettingGroup title={t("settingsPanels.video.resolution")}>
-                <div className="grid grid-cols-3 gap-2">
-                    {qualities.map(value => <OptionPill key={value} selected={quality === value} onClick={() => {
-                        const next = specs.find(spec => spec.quality === value && spec.orientation === selected?.orientation);
-                        // A quality-only value is an incomplete selection and cannot be submitted.
-                        onConfigChange("vquality", next?.resolution ?? value);
-                    }}>{value}</OptionPill>)}
-                </div>
-            </SettingGroup>
-            {quality ? <SettingGroup title={t("settingsPanels.video.ratio")}>
-                <div className="grid grid-cols-3 gap-2">
-                    {ratios.map(spec => <OptionPill key={spec.resolution} selected={selected?.resolution === spec.resolution} onClick={() => onConfigChange("vquality", spec.resolution)}>
-                        {t(`settingsPanels.video.sizes.${spec.orientation}`)}
-                    </OptionPill>)}
-                </div>
-            </SettingGroup> : null}
-            {duration ? <SettingGroup title={t("settingsPanels.video.seconds")}>
-                <label className="flex items-center gap-2 text-sm">
-                    <input
-                        aria-label={t("settingsPanels.video.seconds")}
-                        type="number" min={duration.min} max={duration.max} step={duration.integer ? 1 : "any"}
-                        value={config.videoSeconds || duration.default}
-                        onChange={event => onConfigChange("videoSeconds", event.target.value)}
-                        className="h-9 w-24 rounded-lg border border-input bg-transparent px-3"
-                    />
-                    <span className="text-xs text-muted-foreground">{t("settingsPanels.video.managedDurationRange", { min: duration.min, max: duration.max })}</span>
-                </label>
-            </SettingGroup> : null}
-            {error ? <p role="alert" className="text-xs text-danger">{error}</p> : null}
-            {!specs.length ? <button type="button" className="text-xs underline" onClick={() => {
-                invalidateManagedCatalog();
-                void ensureManagedCatalog().catch(() => undefined);
-            }}>{t("settingsPanels.video.managedRefresh")}</button> : null}
-            <GenerationDefaultsFooter
-                typeName={t("settingsPanels.model.capabilities.video")}
-                summary={selected ? `${selected.quality} · ${t(`settingsPanels.video.sizes.${selected.orientation}`)} · ${videoSecondsLabel(config.videoSeconds || String(selected.duration.default))}` : t("settingsPanels.video.title")}
-                canSet={!error && (config.vquality !== defaults.vquality || config.videoSeconds !== defaults.videoSeconds)}
-                canReset={isOverridden}
-                onSetDefault={() => {
-                    if (!selected || error) return;
-                    updateConfig("vquality", selected.resolution);
-                    updateConfig("videoSeconds", config.videoSeconds || String(selected.duration.default));
-                }}
-                onReset={onResetOverrides || (() => {})}
-            />
-        </div>;
-    }
     if (profile) return <div className={cn("text-foreground", className)} onMouseDown={event => event.stopPropagation()}>
         {showTitle ? <div className="text-lg font-semibold">{t("fal.settings.parameters")}</div> : null}
         <FalGenerationSettings profile={profile} config={config} options={providerOptions} onChange={patch => {

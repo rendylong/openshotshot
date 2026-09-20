@@ -4,19 +4,14 @@ import { useChatGptStore } from "@/stores/use-chatgpt-store";
 import { recoverConfigImport } from "@/services/config-file";
 import { App as AntApp, Switch } from "antd";
 import type { TFunction } from "i18next";
-import { BrainCircuit, Cloud, Database, Download, Pencil, Plug, Plus, RefreshCw, SlidersHorizontal, Sparkles, Trash2, Upload, User, Wifi } from "lucide-react";
+import { BrainCircuit, Cloud, Database, Download, KeyRound, Pencil, Plug, Plus, RefreshCw, SlidersHorizontal, Trash2, Upload, Wifi } from "lucide-react";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isAutodlChannel } from "@/lib/models/model-resolver";
-import { ensureManagedCatalog, invalidateManagedCatalog } from "@/lib/desktop/managed-catalog-cache";
-import { useManagedCatalog } from "@/lib/desktop/use-managed-catalog";
 import { ModelPicker } from "@/components/model-picker";
 import { ChannelEditorDrawer } from "@/components/layout/channel-editor-drawer";
-import { AccountSettings } from "@/components/layout/account-settings";
 import { ConfigLocalStorage } from "@/components/layout/config-local-storage";
-import { CredentialModeSettings } from "@/components/layout/credential-mode-settings";
-import { ReferralSettings } from "@/components/layout/referral-settings";
 import { MemorySettingsSection, type MemoryGuardRef } from "@/components/memory/memory-settings-section";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -35,7 +30,7 @@ import { exportAppConfig, importAppConfig } from "@/services/config-file";
 import { syncAppDataToWebdav, type AppSyncDomainKey, type AppSyncProgressEvent } from "@/services/app-sync";
 import { testWebdavConnection, WEBDAV_MANIFEST_FILE_NAME } from "@/services/webdav-sync";
 import { audioFormatOptions, audioVoiceOptions, normalizeAudioSpeedValue } from "@/lib/audio-generation";
-import { createModelChannel, credentialModeFor, modelOptionsFromChannels, normalizeChatPanelSide, normalizeModelOptionValue, selectableModelsByCapability, useConfigStore, type AgentApiMode, type AiConfig, type ApiCallFormat, type ChannelProvider, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
+import { createModelChannel, modelOptionsFromChannels, normalizeChatPanelSide, normalizeModelOptionValue, selectableModelsByCapability, useConfigStore, type AgentApiMode, type AiConfig, type ApiCallFormat, type ChannelProvider, type ConfigTabKey, type ModelCapability, type ModelChannel } from "@/stores/use-config-store";
 
 type ModelGroup = {
     capability: ModelCapability;
@@ -58,8 +53,8 @@ type SettingsNavItem = {
 };
 
 const settingsNavItems: SettingsNavItem[] = [
-    { key: "account", icon: User, labelKey: "aiSources.account" },
     { key: "channels", icon: Plug, labelKey: "aiSources.services" },
+    { key: "ai-sources", icon: KeyRound, labelKey: "config.tabs.aiSources" },
     { key: "preferences", icon: SlidersHorizontal, labelKey: "config.tabs.preferences" },
     { key: "webdav", icon: Cloud, labelKey: "", label: "WebDAV" },
     { key: "local-storage", icon: Database, labelKey: "config.tabs.localStorage" },
@@ -102,19 +97,12 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
     const sources = useAiSourceStore();
     const connection = useChatGptStore();
     const managed = sources.preferences.selections.agent;
-    const catalog = useManagedCatalog();
-    const retryCatalog = () => {
-        invalidateManagedCatalog();
-        void ensureManagedCatalog().catch(() => undefined);
-    };
-    // shotshot Agent 模型选择：目录就绪且有 text 模型时渲染下拉，否则由 ManagedAgentTile 呈现错误/空态。
-    const managedTextModels = catalog?.status === "ready" ? catalog.models.filter((item) => item.capability === "text") : [];
-    const managedOptions = connection.models.map((model, index) => ({ value: `chatgpt-option-${index}`, label: `${t("aiSources.chatgpt")} · ${model.name}`, modelId: model.id }));
-    const selectedManaged = managed?.source === "chatgpt" ? managedOptions.find(option => option.modelId === managed.modelId) : undefined;
+    const chatgptOptions = connection.models.map((model, index) => ({ value: `chatgpt-option-${index}`, label: `${t("aiSources.chatgpt")} · ${model.name}`, modelId: model.id }));
+    const selectedChatgpt = managed?.source === "chatgpt" ? chatgptOptions.find(option => option.modelId === managed.modelId) : undefined;
     useEffect(() => { void sources.hydrate().catch(() => undefined); }, [sources.hydrate]);
     const changeAgentModel = async (value: string) => {
         try {
-            const option = managedOptions.find(option => option.value === value);
+            const option = chatgptOptions.find(option => option.value === value);
             await sources.select("agent", option ? { source: "chatgpt", modelId: option.modelId } : null);
             if (!option) updateConfig("agentModel", value);
         } catch { void message.error(t("aiSources.preferencesFailed")); }
@@ -228,11 +216,8 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
     const activeNavItem = settingsNavItems.find((item) => item.key === activeTab) || settingsNavItems[1];
 
     const sectionContent: Record<ConfigTabKey, ReactNode> = {
-        account: (
+        "ai-sources": (
             <div className="space-y-6">
-                <AccountSettings />
-                <ReferralSettings />
-                <CredentialModeSettings />
                 <section>
                     <h3 className="mb-3 text-sm font-semibold">{t("aiSources.chatgpt")}</h3>
                     <ChatGptConnection />
@@ -291,27 +276,10 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
                 <div className="mb-2 text-sm font-semibold">{t("config.preferences.agent")}</div>
                 <div className="mb-6 grid gap-5 md:grid-cols-2">
                     <SettingRow label={t("config.preferences.agentModel")}>
-                        {credentialModeFor(config, "agent") === "shotshot" && !managed ? (
-                            managedTextModels.length ? (
-                                <Select value={config.managedAgentModel || managedTextModels[0]!.id} onValueChange={(value) => updateConfig("managedAgentModel", value)}>
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {managedTextModels.map((item) => (
-                                            <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            ) : (
-                                <ManagedAgentTile snapshot={catalog} onRetry={retryCatalog} />
-                            )
-                        ) : (
-                            <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={managed ? selectedManaged?.value || "managed-unavailable" : config.agentModel} currentLabel={managed ? selectedManaged?.label || `${t(managed.source === "chatgpt" ? "aiSources.chatgpt" : "aiSources.platform")} · ${managed.modelId} (${t("aiSources.unavailable")})` : undefined} extraOptions={managedOptions} disabled={sources.status !== "ready" || sources.applying} onChange={value => void changeAgentModel(value)} capability="text" purpose="agent" fullWidth />
-                        )}
+                        <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={managed ? selectedChatgpt?.value || "managed-unavailable" : config.agentModel} currentLabel={managed ? selectedChatgpt?.label || `${t(managed.source === "chatgpt" ? "aiSources.chatgpt" : "aiSources.platform")} · ${managed.modelId} (${t("aiSources.unavailable")})` : undefined} extraOptions={chatgptOptions} disabled={sources.status !== "ready" || sources.applying} onChange={value => void changeAgentModel(value)} capability="text" purpose="agent" fullWidth />
                         {managed && <Button variant="link" size="sm" className="mt-1 h-auto px-0" onClick={() => void changeAgentModel(config.agentModel)}>{t("aiSources.useByok")}</Button>}
                     </SettingRow>
-                    {!managed && credentialModeFor(config, "agent") !== "shotshot" && (
+                    {!managed && (
                         <SettingRow label={t("config.preferences.agentApi")} hint={t("config.preferences.agentApiDescription")}>
                             <Select value={config.agentApiMode} onValueChange={(value) => updateConfig("agentApiMode", value as AgentApiMode)}>
                                 <SelectTrigger className="w-full">
@@ -348,18 +316,7 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
                 <div className="mb-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                     {modelGroups.map((group) => (
                         <SettingRow key={group.modelKey} label={t(group.labelKey)}>
-                            {credentialModeFor(config, group.capability) === "shotshot" ? (
-                                <ManagedDefaultTile
-                                    snapshot={catalog}
-                                    capability={group.capability}
-                                    value={config.managedModels[group.capability]}
-                                    onSelect={(id) => updateConfig("managedModels", { ...config.managedModels, [group.capability]: id })}
-                                    onRetry={retryCatalog}
-                                    config={config}
-                                />
-                            ) : (
-                                <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={config[group.modelKey]} currentLabel={sources.preferences.selections[group.capability] ? `${t("aiSources.platform")} · ${t("aiSources.unavailable")}` : undefined} disabled={sources.status !== "ready" || sources.applying} onChange={(model) => { void sources.select(group.capability, null).then(() => updateConfig(group.modelKey, model)).catch(() => message.error(t("aiSources.preferencesFailed"))); }} capability={group.capability} fullWidth />
-                            )}
+                            <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={config[group.modelKey]} currentLabel={sources.preferences.selections[group.capability] ? `${t("aiSources.platform")} · ${t("aiSources.unavailable")}` : undefined} disabled={sources.status !== "ready" || sources.applying} onChange={(model) => { void sources.select(group.capability, null).then(() => updateConfig(group.modelKey, model)).catch(() => message.error(t("aiSources.preferencesFailed"))); }} capability={group.capability} fullWidth />
                         </SettingRow>
                     ))}
                 </div>
@@ -613,94 +570,6 @@ function apiFormatLabel(apiFormat: ApiCallFormat) {
 
 function formatWebdavTime(value: string, locale: AppLocale) {
     return new Date(value).toLocaleString(locale, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
-}
-
-function managedTileClasses(): string {
-    return "flex h-9 w-full items-center gap-2 rounded-lg border border-amber-600/60 bg-amber-50 px-3 text-sm text-amber-700 dark:border-amber-500/50 dark:bg-amber-950/30 dark:text-amber-400";
-}
-
-function ManagedAgentTile({ snapshot, onRetry }: { snapshot: ReturnType<typeof useManagedCatalog>; onRetry: () => void }) {
-    const { t } = useTranslation();
-    const hasText = Boolean(snapshot?.status === "ready" && snapshot.models.some((model) => model.capability === "text"));
-    if (snapshot?.status === "ready" && hasText) {
-        return (
-            <div>
-                <div className="flex h-9 w-full items-center gap-2 rounded-lg border border-dashed border-stone-300 bg-stone-50 px-3 text-sm text-stone-600 dark:border-stone-700 dark:bg-stone-900/40 dark:text-stone-300">
-                    <Sparkles className="size-3.5 shrink-0" />
-                    <span className="min-w-0 flex-1 truncate">{t("config.managed.provided")}</span>
-                </div>
-                <p className="mt-1 text-xs text-stone-500">{t("config.managed.providedHint")}</p>
-            </div>
-        );
-    }
-    const message = !snapshot || snapshot.status === "error" || snapshot.status === "stale" ? t("config.managed.fetchFailed") : t("config.managed.agentMissingText");
-    const hint = !snapshot || snapshot.status === "error" ? null : snapshot.status === "stale" ? t("config.managed.fetchFailedHint") : t("config.managed.agentMissingHint");
-    return (
-        <div>
-            <div className={managedTileClasses()}>
-                <span className="min-w-0 flex-1 truncate">{message}</span>
-                <button type="button" className="shrink-0 underline underline-offset-2" onClick={onRetry}>{t("config.managed.retry")}</button>
-            </div>
-            {hint ? <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">{hint}</p> : null}
-        </div>
-    );
-}
-
-function ManagedDefaultTile({ snapshot, capability, value, onSelect, onRetry, config }: {
-    snapshot: ReturnType<typeof useManagedCatalog>;
-    capability: ModelCapability;
-    value: string;
-    onSelect: (id: string) => void;
-    onRetry: () => void;
-    config: AiConfig;
-}) {
-    const { t } = useTranslation();
-    const capabilityLabel = t(`config.credentialMode.capabilities.${capability}`);
-    if (capability === "audio") {
-        return <div className="flex h-9 items-center rounded-lg border border-input bg-stone-50 px-3 text-sm text-muted-foreground dark:bg-stone-900/40">{t("config.managed.audioNotProvided")}</div>;
-    }
-    const models = (snapshot?.models ?? []).filter((model) => model.capability === capability);
-    const selected = models.find((model) => model.id === value);
-    if (!snapshot || snapshot.status === "error" || (snapshot.status === "stale" && !models.length)) {
-        return (
-            <div className={managedTileClasses()}>
-                <span className="min-w-0 flex-1 truncate">{!snapshot || snapshot.status === "error" || snapshot.status === "stale" ? t("config.managed.fetchFailed") : t("config.managed.missingCapability", { capability: capabilityLabel })}</span>
-                <button type="button" className="shrink-0 underline underline-offset-2" onClick={onRetry}>{t("config.managed.retry")}</button>
-            </div>
-        );
-    }
-    if (snapshot.status !== "ready") {
-        return (
-            <div className="flex h-9 items-center gap-2 rounded-lg border border-input bg-transparent px-3 text-sm">
-                <span className="size-1.5 shrink-0 rounded-full bg-amber-500" />
-                <span className="min-w-0 flex-1 truncate">{selected?.name ?? value}</span>
-                <span className="shrink-0 text-xs text-amber-600 dark:text-amber-400">{t("config.managed.stale")}·</span>
-                <button type="button" className="shrink-0 text-xs text-amber-600 underline underline-offset-2 dark:text-amber-400" onClick={onRetry}>{t("config.managed.retry")}</button>
-            </div>
-        );
-    }
-    if (!models.length) {
-        return (
-            <div className={managedTileClasses()}>
-                <span className="min-w-0 flex-1 truncate">{t("config.managed.missingCapability", { capability: capabilityLabel })}</span>
-                <button type="button" className="shrink-0 underline underline-offset-2" onClick={onRetry}>{t("config.managed.retry")}</button>
-            </div>
-        );
-    }
-    const effective = selected?.id || models[0]!.id;
-    return (
-        <ModelPicker
-            config={config}
-            value={effective}
-            currentLabel={selected?.name ?? models[0]!.name}
-            extraOnly
-            extraOptionsHeader={t("config.managed.catalogTitle", { capability: capabilityLabel, count: models.length })}
-            extraOptions={models.map((model) => ({ value: model.id, label: model.name }))}
-            onChange={onSelect}
-            fullWidth
-            className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50"
-        />
-    );
 }
 
 function WebdavProgressGrid({ progress, t }: { progress: Record<AppSyncDomainKey, WebdavDomainProgress>; t: TFunction }) {

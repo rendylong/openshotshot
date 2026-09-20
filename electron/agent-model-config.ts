@@ -7,22 +7,16 @@ const CHANNEL_PROVIDERS = new Set(["custom", "minimax-cn", "minimax-global", "de
 function isPlainObject(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
 export function parseAgentModelConfig(raw: unknown): ResolvedTextModelConfig {
     if (!isPlainObject(raw)) throw new Error("invalid_agent_model_config");
-    if (raw.credentialMode === "shotshot") {
-        if (Object.keys(raw).some(key => !["credentialMode", "model", "apiFormat", "agentApiMode"].includes(key)) || typeof raw.model !== "string" || !raw.model.trim() || raw.apiFormat !== "openai" || raw.agentApiMode !== "chat_completions") throw new Error("invalid_agent_model_config");
-        return { credentialMode: "shotshot", model: raw.model, apiFormat: "openai", agentApiMode: "chat_completions" };
-    }
-    if (raw.credentialMode !== undefined && raw.credentialMode !== "byok") throw new Error("invalid_agent_model_config");
-    if (raw.source === "chatgpt" || raw.source === "platform") {
+    if (raw.source === "chatgpt") {
         if (Object.keys(raw).some(key => key !== "source" && key !== "model") || typeof raw.model !== "string" || !raw.model.trim()) throw new Error("invalid_agent_model_config");
         return { source: raw.source, model: raw.model };
     }
     if (raw.source !== undefined && raw.source !== "byok") throw new Error("invalid_agent_model_config");
     const byok = parseByokModelConfig(raw);
     if (!byok) throw new Error("invalid_agent_model_config");
-    return byok;
+    return { source: "byok", ...byok };
 }
 export async function resolveAgentModel(config: ResolvedTextModelConfig, runtime: ModelRuntime): Promise<Model<any>> {
-    if (config.source === "platform") throw new Error("platform_agent_unavailable");
     if (config.source === "chatgpt") {
         const model = runtime.getModel("openai-codex", config.model);
         if (!model || !model.input.includes("text")) throw new Error("chatgpt_model_unavailable");

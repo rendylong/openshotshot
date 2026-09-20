@@ -47,7 +47,7 @@ test.each(["failed", "timed_out"] as const)("%s image waits for delayed hydratio
     } finally { h.unregister(); }
 });
 
-test.each(["shotshot.managed-image", "hiapi.image"])("%s image queries its original task without permitting submit", async adapterId => {
+test.each(["hiapi.image", "fal.image"])("%s image queries its original task without permitting submit", async adapterId => {
     const h = await setup();
     try {
         const attempt = h.attempt(node("failed"));
@@ -122,7 +122,7 @@ test("unknown submission refusal selects the exact batch item without altering s
     } finally { h.hydrate([]); h.unregister(); }
 });
 
-test.each(["hiapi.image", "shotshot.managed-image", "fal.image"])("%s unknown submission recovers the saved ID after hydration", async adapterId => {
+test.each(["hiapi.image", "fal.image"])("%s unknown submission recovers the saved ID after hydration", async adapterId => {
     const h = await setup();
     try {
         const attempt = h.attempt(node("submission_unknown"));

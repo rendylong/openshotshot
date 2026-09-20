@@ -159,21 +159,20 @@ describe("SessionRuntimeRegistry routing", () => {
         await Promise.all(tempRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
     });
 
-    it("creates a managed session through the injected model resolver", async () => {
+    it("creates a byok session through the injected model resolver", async () => {
         const config: ResolvedTextModelConfig = {
-            credentialMode: "shotshot",
-            model: "managed-text",
+            source: "byok",
+            model: "byok-text",
+            baseUrl: "https://gateway.example",
+            apiKey: "unused",
             apiFormat: "openai",
             agentApiMode: "chat_completions",
+            supportsImageInput: false,
         };
         const harness = await createHarness({
             resolveModel: (input) => {
-                if (input.credentialMode !== "shotshot") throw new Error("unexpected model source");
-                return buildModelsFromConfig(input, {
-                baseUrl: "https://gateway.example",
-                resolveApiKey: async () => "main-process-secret",
-                inputModalities: ["text"],
-                }).model;
+                if (input.source !== "byok") throw new Error("unexpected model source");
+                return buildModelsFromConfig(input).model;
             },
         });
 
@@ -348,7 +347,8 @@ describe("SessionRuntimeRegistry routing", () => {
         expect(harness.sessions[0]!.compact).toHaveBeenCalledTimes(1);
         expect(harness.sessions[1]!.compact).not.toHaveBeenCalled();
 
-        const config: import("@/lib/agent/pi-agent-types").ByokTextModelConfig = {
+        const config: ResolvedTextModelConfig = {
+            source: "byok",
             model: "model-2",
             baseUrl: "https://example.test",
             apiKey: "key",
@@ -369,6 +369,7 @@ describe("SessionRuntimeRegistry routing", () => {
 
     it("accepts the HiAPI channel provider in resolved model configs", () => {
         expect(parseResolvedModelConfig({
+            source: "byok",
             model: "deepseek-v4-flash",
             baseUrl: "https://api.hiapi.ai",
             apiKey: "key",
@@ -391,6 +392,7 @@ describe("SessionRuntimeRegistry routing", () => {
         item.runtimeState.allTools = allTools;
 
         const imageConfig: ResolvedTextModelConfig = {
+            source: "byok",
             model: "image-model",
             baseUrl: "https://example.test",
             apiKey: "key",
@@ -425,7 +427,7 @@ describe("SessionRuntimeRegistry routing", () => {
     });
 
     it("switches subscription image capability only at idle model boundaries", async () => {
-        const base = buildModelsFromConfig({ model: "test", baseUrl: "https://example.test", apiKey: "key", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true }).model;
+        const base = buildModelsFromConfig({ source: "byok", model: "test", baseUrl: "https://example.test", apiKey: "key", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true }).model;
         const harness = await createHarness({ resolveModel: config => ({ ...base, provider: config.source === "chatgpt" ? "openai-codex" : "custom" }) });
         const created = await harness.registry.createSession({ scope: { projectId: "p", canvasId: "images" } });
         const item = harness.registry.get(created.sessionId)!;
@@ -434,7 +436,7 @@ describe("SessionRuntimeRegistry routing", () => {
         await harness.registry.prompt(created.sessionId, "generate");
         expect(item.session.getActiveToolNames()).toContain("generate_chatgpt_image");
         Object.assign(item.session, { isStreaming: true });
-        await harness.registry.setModelConfig({ model: "test", baseUrl: "https://example.test", apiKey: "key", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true });
+        await harness.registry.setModelConfig({ source: "byok", model: "test", baseUrl: "https://example.test", apiKey: "key", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: true });
         await harness.registry.prompt(created.sessionId, "queued");
         expect(item.session.getActiveToolNames()).toContain("generate_chatgpt_image");
         Object.assign(item.session, { isStreaming: false });
@@ -554,7 +556,8 @@ describe("SessionRuntimeRegistry routing", () => {
         });
         const summary = await harness.registry.createSession({ scope: { projectId: "p", canvasId: "a" } });
         const oldItem = harness.registry.get(summary.sessionId)!;
-        const config: import("@/lib/agent/pi-agent-types").ByokTextModelConfig = {
+        const config: ResolvedTextModelConfig = {
+            source: "byok",
             model: "model-2",
             baseUrl: "https://example.test",
             apiKey: "key",
@@ -771,36 +774,6 @@ describe("SessionRuntimeRegistry routing", () => {
     });
 });
 
-describe("resolved model config parser", () => {
-    it("accepts a credential-free managed config", () => {
-        expect(parseResolvedModelConfig({
-            credentialMode: "shotshot",
-            model: "managed-text",
-            apiFormat: "openai",
-            agentApiMode: "chat_completions",
-        })).toEqual({ credentialMode: "shotshot", model: "managed-text", apiFormat: "openai", agentApiMode: "chat_completions" });
-    });
-
-    it("rejects renderer-supplied credentials for a managed config", () => {
-        expect(parseResolvedModelConfig({
-            credentialMode: "shotshot",
-            model: "managed-text",
-            apiFormat: "openai",
-            agentApiMode: "chat_completions",
-            apiKey: "must-not-cross-ipc",
-        })).toBeNull();
-    });
-
-    it("rejects unsupported Responses mode for a managed config", () => {
-        expect(parseResolvedModelConfig({
-            credentialMode: "shotshot",
-            model: "managed-text",
-            apiFormat: "openai",
-            agentApiMode: "responses",
-        })).toBeNull();
-    });
-});
-
 describe("parseAgentPromptInput project files", () => {
     const spreadsheetMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -868,7 +841,7 @@ describe("parseAgentUserInputResponse", () => {
 
 
 describe("managed model lifecycle", () => {
-    const nativeModel = (id: string, image = false) => ({ ...buildModelsFromConfig({ model: id, apiKey: "sentinel", baseUrl: "https://example.test", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: image }).model, provider: id.startsWith("chatgpt") ? "openai-codex" : "shotshot-local" });
+    const nativeModel = (id: string, image = false) => ({ ...buildModelsFromConfig({ source: "byok", model: id, apiKey: "sentinel", baseUrl: "https://example.test", apiFormat: "openai", agentApiMode: "responses", supportsImageInput: image }).model, provider: id.startsWith("chatgpt") ? "openai-codex" : "shotshot-local" });
     it("uses injected models at creation, defers changes while busy, and aborts only ChatGPT", async () => {
         const resolveModel = vi.fn(async (config: ResolvedTextModelConfig) => nativeModel(config.model));
         const harness = await createHarness({ resolveModel });

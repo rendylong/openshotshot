@@ -8,7 +8,6 @@ import type { AgentBridge } from "@/lib/agent/pi-agent-types";
 import type { CanvasAgentSnapshot } from "@/lib/canvas/canvas-agent-op-types";
 import type { SkillRuntimeSnapshot, SkillsBridge } from "@/lib/skills/skill-types";
 import i18n from "@/i18n";
-import { ensureManagedCatalog, resetManagedCatalogForTests } from "@/lib/desktop/managed-catalog-cache";
 import { useAgentSessionStore } from "@/stores/use-agent-session-store";
 import { useAgentStore } from "@/stores/use-agent-store";
 import { useProjectStore } from "@/stores/canvas/use-project-store";
@@ -35,12 +34,11 @@ const skillSnapshot: SkillRuntimeSnapshot = { revision: 1, skills: [], sources: 
 
 let sessionSeq = 0;
 
-function shotshotConfig() {
+function byokConfig() {
     return {
         ...defaultConfig,
-        credentialMode: "shotshot" as const,
-        credentialModes: { agent: "shotshot", text: "shotshot", image: "shotshot", video: "shotshot", audio: "shotshot" } as const,
-        managedModels: { text: "", image: "", video: "", audio: "" },
+        apiKey: "sk-test",
+        channels: defaultConfig.channels.map((channel) => ({ ...channel, apiKey: "sk-test" })),
     };
 }
 
@@ -55,111 +53,6 @@ function canvasSnapshot(): CanvasAgentSnapshot {
         viewport: { x: 0, y: 0, k: 1 },
     };
 }
-
-// 回归：面板发送不再读取 memo 化的 modelConfig 做前置门。目录快照未注水（reset 后）
-// 直接经面板 submit 发送时，必须由 sendPrompt 的门禁先注水再解析，而不是弹配置弹窗。
-describe("PiAgentPanel managed send gate", () => {
-    let originalOpenConfigDialog: ReturnType<typeof useConfigStore.getState>["openConfigDialog"];
-
-    beforeEach(() => {
-        originalOpenConfigDialog = useConfigStore.getState().openConfigDialog;
-        useAiSourceStore.setState({ status: "ready", preferences: { version: 1, selections: {} }, error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig() as never });
-        useAgentStore.setState({
-            messages: [],
-            sending: false,
-            waiting: false,
-            eventLogs: [],
-            tokenUsage: null,
-            canvasContext: { snapshot: canvasSnapshot(), applyOps: vi.fn(), undoOps: () => null, canUndo: false },
-            canvasReferences: [],
-            connectError: "",
-            activity: "",
-            prompt: "",
-            pendingAttachments: [],
-            submitRequest: null,
-        });
-        usePiHistoryStore.setState({ activeSessionId: null, sessions: [] });
-        useAgentSessionStore.setState({ sessions: [], activeSessionId: null, unreadableSessions: [], pendingUserInputs: {} });
-    });
-
-    afterEach(() => {
-        delete window.shotshot;
-        resetManagedCatalogForTests();
-        useConfigStore.setState({ openConfigDialog: originalOpenConfigDialog, config: defaultConfig });
-    });
-
-    test("sends the first prompt by rehydrating the catalog at the gate instead of opening the config dialog", async () => {
-        const listModels = vi.fn(async () => [{ id: "shotshot-text-pro", name: "shotshot-text-pro", capability: "text" as const, execution: "direct" as const }]);
-        const agent: AgentBridge = {
-            listSessions: async () => ({ sessions: [], unreadable: [] }),
-            createSession: async (input) => ({ sessionId: `session-${++sessionSeq}`, title: input.title || `session-${sessionSeq}`, scope: input.scope, createdAt: 0, updatedAt: 0, status: "idle", hasUnfinishedOperation: false }),
-            openSession: async () => ({ summary: { sessionId: "session-open", title: "session-open", scope: { projectId: "project-1", canvasId: "canvas-1" }, createdAt: 0, updatedAt: 0, status: "idle", hasUnfinishedOperation: false }, entries: [] }),
-            closeSession: async () => undefined,
-            readSessionEntries: async () => [],
-            abort: async () => undefined,
-            compact: async () => ({ ok: true }),
-            setCanvasSnapshot: () => {},
-            importLegacySessions: async () => ({ ok: false, error: "not enabled" }),
-            prompt: async () => ({ ok: true }),
-            respondToUserInput: async () => ({ ok: true }),
-            setApprovalMode: async () => undefined,
-            // 90b9d6d 起 createSession 前会解析项目工作区；未提供时 sendPrompt 静默失败。
-            ensureProjectWorkspace: async () => ({ ok: false, error: "unsupported" }),
-            respondToApproval: async () => ({ ok: true }),
-            setModelConfig: async () => {},
-            onEvent: () => () => undefined,
-            waitForIdle: async () => {},
-            registerFiles: async () => [],
-            readFile: async () => ({ ok: false, error: "unsupported" }),
-            listFolder: async () => ({ ok: false, error: "unsupported" }),
-            fetch: async (request) => ({ id: request.id, status: 200, statusText: "OK", headers: {}, body: "" }),
-            setProjects: () => {},
-            setGenerationStatus: () => {},
-            setModels: () => {},
-            setScriptEntities: () => {},
-        };
-        const skills: SkillsBridge = {
-            configure: async () => ({ fresh: true, snapshot: skillSnapshot }),
-            scan: async () => ({ fresh: true, snapshot: skillSnapshot }),
-            read: async () => null,
-            readFile: async () => ({ ok: false, error: "missing" }),
-            write: async () => ({ ok: true }),
-            importSkill: async () => null,
-            remove: async () => ({ ok: true }),
-            seed: async () => ({ ok: true }),
-            pickFolder: async () => null,
-        };
-        window.shotshot = { agent, skills, platform: "darwin", managedModels: { listModels, fetch: vi.fn(), abort: vi.fn() } } as never;
-        // memo 只作展示（composer 挂载）：先注水一次，等价"注水完成后 sources 才更新"的正常恢复路径。
-        await ensureManagedCatalog();
-        const openConfigDialog = vi.fn();
-        useConfigStore.setState({ openConfigDialog });
-        render(
-            <I18nextProvider i18n={i18n}>
-                <AntApp>
-                    <MemoryRouter initialEntries={["/canvas/project-1/canvas-1"]}>
-                        <PiAgentPanel />
-                    </MemoryRouter>
-                </AntApp>
-            </I18nextProvider>,
-        );
-
-        // 冷启动门禁：发送前把快照清零，等价"从未注水"。
-        resetManagedCatalogForTests();
-        const input = screen.getByRole("textbox", { name: i18n.t("agent.pi.placeholder") });
-        input.textContent = "读取画布";
-        fireEvent.input(input);
-        fireEvent.keyDown(input, { key: "Enter", code: "Enter" });
-
-        // sendPrompt 门禁先注水再解析：listModels 第二次被调，发送走通。
-        await waitFor(() => expect(listModels).toHaveBeenCalledTimes(2));
-        await waitFor(() => expect(useAgentStore.getState().messages.some((item) => item.role === "user" && item.text === "读取画布")).toBe(true));
-        expect(openConfigDialog).not.toHaveBeenCalled();
-        expect(useConfigStore.getState().isConfigOpen).toBe(false);
-        expect(useAgentStore.getState().connectError).toBe("");
-    });
-});
 
 // 回归：面板头部工作区按钮按项目显示工作区（basename / 占位），菜单提供复制路径与更改目录；
 // 审批模式入口已移入 composer，header 不再出现。
@@ -230,7 +123,7 @@ describe("PiAgentPanel workspace button", () => {
             seed: async () => ({ ok: true }),
             pickFolder: vi.fn(async () => "/tmp/x"),
         };
-        window.shotshot = { agent, skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => []), fetch: vi.fn(), abort: vi.fn() } } as never;
+        window.shotshot = { agent, skills, platform: "darwin" } as never;
         render(
             <I18nextProvider i18n={i18n}>
                 <AntApp>
@@ -291,7 +184,7 @@ describe("PiAgentPanel workspace button", () => {
             seed: async () => ({ ok: true }),
             pickFolder: async () => null,
         };
-        window.shotshot = { agent, skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => []), fetch: vi.fn(), abort: vi.fn() } } as never;
+        window.shotshot = { agent, skills, platform: "darwin" } as never;
         render(
             <I18nextProvider i18n={i18n}>
                 <AntApp>
@@ -390,7 +283,6 @@ describe("PiAgentPanel workspace relocation", () => {
             skills: { configure: async () => ({ fresh: true, snapshot: skillSnapshot }), scan: async () => ({ fresh: true, snapshot: skillSnapshot }), read: async () => null, readFile: async () => ({ ok: false, error: "missing" }), write: async () => ({ ok: true }), importSkill: async () => null, remove: async () => ({ ok: true }), seed: async () => ({ ok: true }), pickFolder },
             platform: "darwin",
             projectAssets: { relocateWorkspace },
-            managedModels: { listModels: vi.fn(async () => []), fetch: vi.fn(), abort: vi.fn() },
         } as never;
     });
 
@@ -486,7 +378,7 @@ describe("PiAgentPanel header close button", () => {
             seed: async () => ({ ok: true }),
             pickFolder: async () => null,
         };
-        window.shotshot = { agent, skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => []), fetch: vi.fn(), abort: vi.fn() } } as never;
+        window.shotshot = { agent, skills, platform: "darwin" } as never;
         render(
             <I18nextProvider i18n={i18n}>
                 <AntApp>
@@ -571,7 +463,7 @@ describe("PiAgentPanel header close button", () => {
             seed: async () => ({ ok: true }),
             pickFolder: async () => null,
         };
-        window.shotshot = { agent, skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => []), fetch: vi.fn(), abort: vi.fn() } } as never;
+        window.shotshot = { agent, skills, platform: "darwin" } as never;
         render(
             <I18nextProvider i18n={i18n}>
                 <AntApp>
@@ -669,7 +561,7 @@ describe("PiAgentPanel attachment materialization", () => {
         promptSpy.mockClear();
         storeCanvasMediaMock.mockReset();
         useAiSourceStore.setState({ status: "ready", preferences: { version: 1, selections: {} }, error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig() as never });
+        useConfigStore.setState({ config: byokConfig() });
         useAgentStore.setState({
             messages: [],
             sending: false,
@@ -686,13 +578,11 @@ describe("PiAgentPanel attachment materialization", () => {
         });
         usePiHistoryStore.setState({ activeSessionId: null, sessions: [] });
         useAgentSessionStore.setState({ sessions: [], activeSessionId: null, unreadableSessions: [], pendingUserInputs: {} });
-        window.shotshot = { agent: buildAgent(), skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => [{ id: "shotshot-text-pro", name: "shotshot-text-pro", capability: "text" as const, execution: "direct" as const }]), fetch: vi.fn(), abort: vi.fn() } } as never;
-        await ensureManagedCatalog();
+        window.shotshot = { agent: buildAgent(), skills, platform: "darwin" } as never;
     });
 
     afterEach(async () => {
         delete window.shotshot;
-        resetManagedCatalogForTests();
         useConfigStore.setState({ config: defaultConfig });
         useAgentStore.setState({ connectError: "", activity: "" });
     });
@@ -820,7 +710,7 @@ describe("PiAgentPanel header history popover and debug log mode", () => {
 
     beforeEach(async () => {
         useAiSourceStore.setState({ status: "ready", preferences: { version: 1, selections: {} }, error: null, applying: false });
-        useConfigStore.setState({ config: shotshotConfig() as never });
+        useConfigStore.setState({ config: byokConfig() });
         useAgentStore.setState({
             messages: [],
             sending: false,
@@ -837,14 +727,12 @@ describe("PiAgentPanel header history popover and debug log mode", () => {
         });
         usePiHistoryStore.setState({ activeSessionId: null, sessions: [] });
         useAgentSessionStore.setState({ sessions: [], activeSessionId: null, unreadableSessions: [], pendingUserInputs: {} });
-        window.shotshot = { agent: buildAgent(), skills, platform: "darwin", managedModels: { listModels: vi.fn(async () => [{ id: "shotshot-text-pro", name: "shotshot-text-pro", capability: "text" as const, execution: "direct" as const }]), fetch: vi.fn(), abort: vi.fn() } } as never;
+        window.shotshot = { agent: buildAgent(), skills, platform: "darwin" } as never;
         // composer 只在 modelConfig 就绪时挂载；先注水目录快照。
-        await ensureManagedCatalog();
     });
 
     afterEach(() => {
         delete window.shotshot;
-        resetManagedCatalogForTests();
         useConfigStore.setState({ config: defaultConfig });
     });
 
