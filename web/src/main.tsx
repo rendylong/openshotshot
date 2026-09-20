@@ -7,10 +7,7 @@ import { RouterProvider } from "react-router-dom";
 
 import { AppProviders } from "@/components/layout/app-providers";
 import "@/i18n";
-import { initAnalytics } from "@/lib/analytics";
 import { router } from "@/router";
-
-initAnalytics();
 
 createRoot(document.getElementById("root")!).render(
     <React.StrictMode>

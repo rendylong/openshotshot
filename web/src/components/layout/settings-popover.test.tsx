@@ -39,7 +39,7 @@ describe("SettingsPopover", () => {
         expect(screen.getByRole("button", { name: "设置" })).toHaveAttribute("aria-expanded", "true");
         expect(screen.getByRole("menu")).toBeInTheDocument();
         expect(screen.getByText("模型与 API 配置")).toBeInTheDocument();
-        expect(screen.getByText("帮助与文档")).toBeInTheDocument();
+        expect(screen.getByText("项目主页")).toBeInTheDocument();
     });
 
     test("closing the menu collapses the trigger", () => {

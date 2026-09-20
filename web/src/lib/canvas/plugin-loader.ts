@@ -58,18 +58,18 @@ function withCacheBust(url: string) {
 
 // Install or replace a plugin from a URL and enable it immediately.
 // bustCache bypasses HTTP/CDN caches during upgrades while persisting a clean URL without the timestamp query.
-export async function installPluginFromUrl(url: string, opts?: { official?: boolean; bustCache?: boolean }) {
+export async function installPluginFromUrl(url: string, opts?: { bustCache?: boolean }) {
     const source = await fetchPluginSource(opts?.bustCache ? withCacheBust(url) : url);
     const plugin = await evaluatePluginSource(source);
     deactivatePlugin(plugin.id); // Replace the previous version.
-    usePluginStore.getState().upsert({ id: plugin.id, name: plugin.name || plugin.id, version: plugin.version || "0.0.0", description: plugin.description, url, source, enabled: true, official: opts?.official });
+    usePluginStore.getState().upsert({ id: plugin.id, name: plugin.name || plugin.id, version: plugin.version || "0.0.0", description: plugin.description, url, source, enabled: true });
     activatePlugin(plugin);
     return plugin;
 }
 
 export async function updatePlugin(record: InstalledPlugin) {
     // Upgrades must fetch the latest output and therefore always bypass caches.
-    return installPluginFromUrl(record.url, { official: record.official, bustCache: true });
+    return installPluginFromUrl(record.url, { bustCache: true });
 }
 
 export async function setPluginEnabled(record: InstalledPlugin, enabled: boolean) {

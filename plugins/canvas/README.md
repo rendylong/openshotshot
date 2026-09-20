@@ -45,9 +45,9 @@ npm run dev     # watch,改动自动构建并同步
 
 把 `dist/<name>.js` 托管到任意静态地址(CDN、GitHub Raw、对象存储),用户在画布「节点插件」管理器填该 URL 安装。升级时重新构建覆盖同一 URL,用户点「更新」即可。
 
-## 官方插件注册表
+## 官方插件
 
-本项目官方插件由 CI 集中构建后发布到孤儿分支 `plugins-dist`(**构建产物不进 git**),画布「节点插件」面板顶部的**官方插件**区经 jsDelivr 从该分支远程拉取并一键安装;第三方插件仍走下方「第三方插件」的 JS URL 安装。构建脚本与发布说明见 [`registry/`](./registry/README.md);清单地址可用 `VITE_PLUGIN_REGISTRY_URL` 覆盖成自建来源。
+仓库内置的官方插件(Markdown、SVG、HTML、3D 全景、便利贴)与第三方插件走同一安装通道:构建产物托管到任意静态地址后,在画布「节点插件」管理器填 URL 安装。[`registry/`](./registry/README.md) 提供一次性构建全部官方插件的集中脚本;本地开发则用下方「本地开发」的自动发现流程。
 
 ## 本地开发
 

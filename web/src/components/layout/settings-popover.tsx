@@ -3,7 +3,7 @@ import { Popover } from "antd";
 import { BookOpen, Languages, Moon, Settings2, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import { DOCS_URL } from "@/constant/env";
+import { REPO_URL } from "@/constant/env";
 import { changeAppLocale, type AppLocale } from "@/i18n";
 import { useConfigStore } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
@@ -63,9 +63,9 @@ export function SettingsPopover({ onOpenChange, collapsed = false }: { onOpenCha
                 <Languages className="size-4" />
                 {t("sidebar.settings.language", { language: t(nextLocale === "zh-CN" ? "locale.zhCN" : "locale.enUS") })}
             </button>
-            <a href={DOCS_URL} target="_blank" rel="noopener noreferrer" className={itemClass} onClick={close}>
+            <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className={itemClass} onClick={close}>
                 <BookOpen className="size-4" />
-                {t("sidebar.settings.docs")}
+                {t("sidebar.settings.repo")}
             </a>
         </div>
     );

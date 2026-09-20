@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "type": "module",
-    "description": "shotshot 官方插件的集中构建(CI 发布到 plugins-dist 分支)",
+    "description": "shotshot 官方插件的集中构建(产物自托管,经 URL 安装)",
     "scripts": {
         "build": "node build.mjs"
     },

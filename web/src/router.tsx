@@ -1,6 +1,5 @@
 import { createBrowserRouter, createHashRouter, Navigate, Outlet, useParams } from "react-router-dom";
 
-import { AnalyticsTracker } from "@/components/layout/analytics-tracker";
 import UserLayout from "@/layouts/user-layout";
 import CanvasProjectPage from "@/pages/canvas/project";
 import HomePage from "@/pages/home";
@@ -26,7 +25,6 @@ export const router = createRouter([
     {
         element: (
             <UserLayout>
-                <AnalyticsTracker />
                 <Outlet />
             </UserLayout>
         ),

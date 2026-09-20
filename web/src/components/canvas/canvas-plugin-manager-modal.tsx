@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { App, Button, Input, Modal, Popconfirm, Switch, Tabs } from "antd";
-import { AlertTriangle, Download, Puzzle, RefreshCw, Trash2 } from "lucide-react";
+import { AlertTriangle, Puzzle, RefreshCw, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { canvasThemes } from "@/lib/canvas-theme";
 import { MODAL_WIDTH } from "@/lib/design/modal";
 import { installPluginFromUrl, setPluginEnabled, uninstallPlugin, updatePlugin } from "@/lib/canvas/plugin-loader";
-import { fetchOfficialPlugins, hasUpgrade, type OfficialPluginEntry } from "@/lib/canvas/plugin-registry";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { usePluginStore, type InstalledPlugin } from "@/stores/canvas/use-plugin-store";
 
@@ -19,30 +18,8 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
     const [installing, setInstalling] = useState(false);
     const [busyId, setBusyId] = useState<string | null>(null);
 
-    const [official, setOfficial] = useState<OfficialPluginEntry[]>([]);
-    const [loadingOfficial, setLoadingOfficial] = useState(false);
-    const [officialError, setOfficialError] = useState<string | null>(null);
-
-    const recordById = useMemo(() => new Map(plugins.map((item) => [item.id, item])), [plugins]);
     const localPlugins = useMemo(() => plugins.filter((item) => item.local), [plugins]);
-    const thirdPartyPlugins = useMemo(() => plugins.filter((item) => !item.local && !item.official), [plugins]);
-
-    const loadOfficial = useCallback(async () => {
-        setLoadingOfficial(true);
-        setOfficialError(null);
-        try {
-            setOfficial(await fetchOfficialPlugins());
-        } catch (error) {
-            setOfficialError(error instanceof Error ? error.message : String(error));
-        } finally {
-            setLoadingOfficial(false);
-        }
-    }, []);
-
-    // Fetch the official registry when opening the panel, but only if it has not been loaded yet.
-    useEffect(() => {
-        if (open && official.length === 0 && !loadingOfficial && !officialError) void loadOfficial();
-    }, [open, official.length, loadingOfficial, officialError, loadOfficial]);
+    const thirdPartyPlugins = useMemo(() => plugins.filter((item) => !item.local), [plugins]);
 
     const handleInstallUrl = async () => {
         const target = url.trim();
@@ -59,18 +36,6 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
         }
     };
 
-    const handleInstallOfficial = async (entry: OfficialPluginEntry) => {
-        setBusyId(entry.id);
-        try {
-            const plugin = await installPluginFromUrl(entry.url, { official: true });
-            message.success(t("canvas.plugins.installed", { name: plugin.name }));
-        } catch (error) {
-            message.error(t("canvas.plugins.installFailed", { error: error instanceof Error ? error.message : String(error) }));
-        } finally {
-            setBusyId(null);
-        }
-    };
-
     const runOnPlugin = async (record: InstalledPlugin, action: () => Promise<void>, successText: string) => {
         setBusyId(record.id);
         try {
@@ -84,18 +49,17 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
     };
 
     // Installed plugin actions: enable toggle plus update/uninstall for non-local plugins.
-    // Highlight the update action when a newer remote version is available.
-    const installedControls = (record: InstalledPlugin, upgradable = false) => (
+    const installedControls = (record: InstalledPlugin) => (
         <>
             <Switch size="small" checked={record.enabled} loading={busyId === record.id} onChange={(checked) => runOnPlugin(record, () => setPluginEnabled(record, checked), t(checked ? "canvas.plugins.enabled" : "canvas.plugins.disabled"))} />
             {!record.local && (
                 <>
                     <Button
-                        type={upgradable ? "primary" : "text"}
+                        type="text"
                         size="small"
                         icon={<RefreshCw className="size-4" />}
                         loading={busyId === record.id}
-                        title={t(upgradable ? "canvas.plugins.upgradeAvailable" : "canvas.plugins.updateFromSource")}
+                        title={t("canvas.plugins.updateFromSource")}
                         onClick={() => runOnPlugin(record, async () => void (await updatePlugin(record)), t("canvas.plugins.updated"))}
                     />
                     <Popconfirm title={t("canvas.plugins.uninstallTitle")} okText={t("canvas.plugins.uninstall")} cancelText={t("canvas.editors.cancel")} onConfirm={() => uninstallPlugin(record.id)}>
@@ -104,15 +68,6 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
                 </>
             )}
         </>
-    );
-
-    // Add a green dot at the icon's top-right corner when an update is available.
-    // A card-colored box shadow separates the dot visually from the icon.
-    const withUpgradeDot = (icon: ReactNode) => (
-        <span className="relative inline-flex">
-            {icon}
-            <span className="absolute -right-1 -top-1 size-2 rounded-full bg-success" style={{ boxShadow: `0 0 0 2px ${theme.node.fill}` }} title={t("canvas.plugins.newVersion")} />
-        </span>
     );
 
     const versionTag = (version: string) => (
@@ -148,52 +103,6 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
         </div>
     );
 
-    const officialTab = (
-        <div className="space-y-2">
-            <div className="flex items-center justify-between">
-                <div className="text-xs" style={{ color: theme.node.muted }}>
-                    {t("canvas.plugins.officialDescription")}
-                </div>
-                <Button type="text" size="small" icon={<RefreshCw className={`size-4 ${loadingOfficial ? "animate-spin" : ""}`} />} onClick={loadOfficial} disabled={loadingOfficial}>
-                    {t("canvas.plugins.refresh")}
-                </Button>
-            </div>
-            {officialError ? (
-                <div className="rounded-lg border px-3 py-2 text-xs" style={{ borderColor: theme.node.stroke, color: theme.node.muted }}>
-                    {t("canvas.plugins.loadFailed", { error: officialError })}
-                </div>
-            ) : loadingOfficial && official.length === 0 ? (
-                emptyHint(t("canvas.plugins.loadingOfficial"))
-            ) : official.length === 0 ? (
-                emptyHint(t("canvas.plugins.noOfficial"))
-            ) : (
-                <div className="thin-scrollbar max-h-[46vh] space-y-2 overflow-auto">
-                    {official.map((entry) => {
-                        const record = recordById.get(entry.id);
-                        // Show the update dot and highlight the action when the remote version is newer.
-                        const upgradable = Boolean(record && hasUpgrade(record.version, entry.version));
-                        const icon = entry.icon || <Puzzle className="size-4" />;
-                        return row(
-                            entry.id,
-                            upgradable ? withUpgradeDot(icon) : icon,
-                            entry.name,
-                            // Show local and remote versions in the title so the update target is explicit.
-                            upgradable && record ? `${record.version} → ${entry.version}` : entry.version,
-                            entry.description,
-                            record ? (
-                                installedControls(record, upgradable)
-                            ) : (
-                                <Button type="primary" size="small" icon={<Download className="size-4" />} loading={busyId === entry.id} onClick={() => handleInstallOfficial(entry)}>
-                                    {t("canvas.plugins.install")}
-                                </Button>
-                            ),
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-
     const localTab = <div className="thin-scrollbar max-h-[52vh] space-y-2 overflow-auto">{localPlugins.map((record) => row(record.id, <Puzzle className="size-4" />, record.name, record.version, record.description || record.url, installedControls(record)))}</div>;
 
     const thirdPartyTab = (
@@ -209,7 +118,6 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
     );
 
     const tabs = [
-        { key: "official", label: t("canvas.plugins.official"), children: officialTab },
         ...(localPlugins.length > 0 ? [{ key: "local", label: t("canvas.plugins.local"), children: localTab }] : []),
         { key: "third", label: t("canvas.plugins.thirdParty"), children: thirdPartyTab },
     ];
@@ -221,7 +129,7 @@ export function CanvasPluginManagerModal({ open, onClose }: { open: boolean; onC
                     <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
                     <span>{t("canvas.plugins.warning")}</span>
                 </div>
-                <Tabs defaultActiveKey="official" items={tabs} />
+                <Tabs defaultActiveKey="third" items={tabs} />
             </div>
         </Modal>
     );

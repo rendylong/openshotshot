@@ -42,7 +42,7 @@ const taskCloseGuard = createTaskCloseGuard(async (count) => {
         defaultId: 0,
         cancelId: 0,
         title: "生成任务仍在进行",
-        message: `当前有 ${count} 个生成任务仍在进行。退出会停止本地任务跟踪，远端任务可能继续运行；重新打开 shotshot.ai 后会自动恢复查询。`,
+        message: `当前有 ${count} 个生成任务仍在进行。退出会停止本地任务跟踪，远端任务可能继续运行；重新打开 ShotShot 后会自动恢复查询。`,
     };
     const result = mainWindow && !mainWindow.isDestroyed()
         ? await dialog.showMessageBox(mainWindow, options)
