@@ -1,0 +1,101 @@
+{
+  "name": "shotshot-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "postinstall": "patch-package",
+    "build": "electron-vite build",
+    "build:web": "cd web && npm run build",
+    "build:web:desktop": "cd web && VITE_BASE=./ npm run build",
+    "dist": "node scripts/clean-package-output.mjs && npm run build:web:desktop && electron-vite build && electron-builder --mac && npm run verify:packaging-brand",
+    "pack": "npm run build:web:desktop && electron-vite build && electron-builder --dir -c.mac.identity=rendylong -c.mac.timestamp=none -c.forceCodeSigning=true",
+    "verify:packaging-brand": "node scripts/verify-packaged-brand.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "electron ."
+  },
+  "dependencies": {
+    "@earendil-works/pi-tui": "0.84.4",
+    "@sinclair/typebox": "0.34.52",
+    "pi-agent-wait": "0.6.0",
+    "pi-mono-ask-user-question": "1.8.0",
+    "proper-lockfile": "4.1.2",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-agent-core": "^0.84.4",
+    "@earendil-works/pi-ai": "^0.84.4",
+    "@earendil-works/pi-coding-agent": "0.84.4",
+    "patch-package": "^8.0.1",
+    "@types/node": "^26.4.0",
+    "electron": "44.0.0",
+    "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "jsdom": "^30.0.1",
+    "nanoid": "^5.1.16",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  },
+  "build": {
+    "appId": "ai.shotshot.desktop",
+    "productName": "ShotShot",
+    "asar": true,
+    "protocols": {
+      "name": "ShotShot OAuth callback",
+      "schemes": [
+        "ai.shotshot.desktop"
+      ]
+    },
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "web/dist/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "electron/resources/skill-creator",
+        "to": "skill-creator"
+      },
+      {
+        "from": "electron/resources/shotshot-director",
+        "to": "shotshot-director"
+      },
+      {
+        "from": "electron/resources/character-four-view",
+        "to": "character-four-view"
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.graphics-design",
+      "icon": "build/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "icon": "build/icon-1024.png",
+      "category": "Graphics",
+      "target": [
+        "AppImage"
+      ]
+    }
+  }
+}

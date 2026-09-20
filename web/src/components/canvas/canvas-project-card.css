@@ -1,0 +1,138 @@
+.canvas-project-card {
+    --project-color: #78716c;
+    position: relative;
+    isolation: isolate;
+    height: 196px;
+    border-radius: 22px;
+    outline: none;
+}
+
+.canvas-project-card:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--project-color) 72%, white);
+    outline-offset: 3px;
+}
+
+.canvas-project-card__artifacts {
+    position: absolute;
+    inset: 0 12px auto 43%;
+    z-index: 1;
+    height: 112px;
+    pointer-events: none;
+}
+
+.canvas-project-card__artifact {
+    position: absolute;
+    top: 44px;
+    width: 70%;
+    height: 84px;
+    overflow: hidden;
+    border: 3px solid var(--popover);
+    border-radius: 10px 10px 4px 4px;
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: color-mix(in srgb, var(--project-color) 6%, white);
+    box-shadow: var(--elevation-menu);
+    transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.canvas-project-card__artifact:first-child {
+    right: 22%;
+    transform: rotate(-2deg);
+}
+
+.canvas-project-card__artifact:last-child {
+    right: 0;
+    transform: rotate(1.5deg);
+}
+
+.canvas-project-card:hover .canvas-project-card__artifact:first-child,
+.canvas-project-card:focus-visible .canvas-project-card__artifact:first-child {
+    transform: translateY(-22px) rotate(-3deg);
+}
+
+.canvas-project-card:hover .canvas-project-card__artifact:last-child,
+.canvas-project-card:focus-visible .canvas-project-card__artifact:last-child {
+    transform: translateY(-30px) rotate(2.5deg);
+}
+
+.canvas-project-card__artifact img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.canvas-project-card__artifact--placeholder {
+    width: 68%;
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    border-color: color-mix(in srgb, var(--project-color) 26%, white);
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: linear-gradient(145deg, color-mix(in srgb, var(--project-color) 5%, white), white);
+}
+
+.canvas-project-card__artifact--placeholder::before {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    left: 14px;
+    height: 5px;
+    border-radius: 999px;
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: color-mix(in srgb, var(--project-color) 20%, transparent);
+    box-shadow:
+        0 13px 0 color-mix(in srgb, var(--project-color) 11%, transparent),
+        0 26px 0 color-mix(in srgb, var(--project-color) 7%, transparent);
+    content: "";
+}
+
+.canvas-project-card__folder {
+    position: absolute;
+    inset: 40px 0 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    padding: 50px 18px 15px;
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: linear-gradient(135deg, color-mix(in srgb, var(--project-color) 9%, rgb(255 255 255 / 0.8)), rgb(255 255 255 / 0.7));
+    filter: drop-shadow(0 9px 16px rgb(28 25 23 / 0.07));
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400' preserveAspectRatio='none'%3E%3Cpath fill='black' d='M48 0H330Q346 0 360 14L420 60H952Q1000 60 1000 108V352Q1000 400 952 400H48Q0 400 0 352V48Q0 0 48 0Z'/%3E%3C/svg%3E");
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    transition: filter 220ms ease;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 400' preserveAspectRatio='none'%3E%3Cpath fill='black' d='M48 0H330Q346 0 360 14L420 60H952Q1000 60 1000 108V352Q1000 400 952 400H48Q0 400 0 352V48Q0 0 48 0Z'/%3E%3C/svg%3E");
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+}
+
+.canvas-project-card:hover .canvas-project-card__folder {
+    filter: drop-shadow(0 11px 18px rgb(28 25 23 / 0.09));
+}
+
+.dark .canvas-project-card__folder {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: linear-gradient(135deg, color-mix(in srgb, var(--project-color) 13%, rgb(28 25 23 / 0.84)), rgb(28 25 23 / 0.78));
+    filter: drop-shadow(0 10px 18px rgb(28 25 23 / 0.22));
+}
+
+.dark .canvas-project-card__artifact {
+    border-color: var(--border);
+    background: var(--card);
+    box-shadow: var(--elevation-menu);
+}
+
+.dark .canvas-project-card__artifact--placeholder {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    border-color: color-mix(in srgb, var(--project-color) 30%, var(--muted));
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- 渐变/混合属品牌位，token 化见 spec §2 */
+    background: linear-gradient(145deg, color-mix(in srgb, var(--project-color) 6%, var(--sidebar)), var(--muted));
+    box-shadow: var(--elevation-menu);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .canvas-project-card,
+    .canvas-project-card__artifact,
+    .canvas-project-card__folder {
+        transition-duration: 0.01ms;
+    }
+}

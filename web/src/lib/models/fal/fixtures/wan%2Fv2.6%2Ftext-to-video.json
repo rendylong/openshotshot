@@ -1,0 +1,524 @@
+{
+  "endpointId": "wan/v2.6/text-to-video",
+  "openapi": {
+    "openapi": "3.0.4",
+    "info": {
+      "title": "Queue OpenAPI for fal-ai/wan-26-t2v/text-to-video",
+      "version": "1.0.0",
+      "description": "The OpenAPI schema for the fal-ai/wan-26-t2v/text-to-video queue.",
+      "x-fal-metadata": {
+        "endpointId": "fal-ai/wan-26-t2v/text-to-video",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/wan-26-t2v/text-to-video",
+        "documentationUrl": "https://fal.ai/models/fal-ai/wan-26-t2v/text-to-video/api",
+        "about": "Generate a video from text using WAN 2.6 text-to-video model.\n\nWAN 2.6 T2V features:\n- Multi-shot video generation with intelligent scene segmentation\n- Resolution: 720p and 1080p\n- Duration: 5, 10, or 15 seconds\n- Multiple aspect ratios: 16:9, 9:16, 1:1, 4:3, 3:4\n- Shot type control: multi-shot or single-shot generation"
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "Authorization",
+          "description": "Fal Key"
+        }
+      },
+      "schemas": {
+        "QueueStatus": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ]
+            },
+            "request_id": {
+              "type": "string",
+              "description": "The request id."
+            },
+            "response_url": {
+              "type": "string",
+              "description": "The response url."
+            },
+            "status_url": {
+              "type": "string",
+              "description": "The status url."
+            },
+            "cancel_url": {
+              "type": "string",
+              "description": "The cancel url."
+            },
+            "logs": {
+              "type": "object",
+              "description": "The logs.",
+              "additionalProperties": true
+            },
+            "metrics": {
+              "type": "object",
+              "description": "The metrics.",
+              "additionalProperties": true
+            },
+            "queue_position": {
+              "type": "integer",
+              "description": "The queue position."
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ]
+        },
+        "Wan26T2vTextToVideoInput": {
+          "title": "TextToVideoInput",
+          "properties": {
+            "multi_shots": {
+              "title": "Multi Shots",
+              "default": true,
+              "description": "When true, enables intelligent multi-shot segmentation for coherent narrative videos. Only active when enable_prompt_expansion is True. Set to false for single-shot generation.",
+              "type": "boolean"
+            },
+            "negative_prompt": {
+              "title": "Negative Prompt",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "",
+              "description": "Negative prompt to describe content to avoid. Max 500 characters.",
+              "examples": [
+                "low resolution, error, worst quality, low quality, defects"
+              ]
+            },
+            "audio_url": {
+              "title": "Audio Url",
+              "anyOf": [
+                {
+                  "_fal_ui_field": "audio",
+                  "ui": {
+                    "field": "audio"
+                  },
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\nURL of the audio to use as the background music. Must be publicly accessible.\nLimit handling: If the audio duration exceeds the duration value (5, 10, or 15 seconds),\nthe audio is truncated to the first N seconds, and the rest is discarded. If\nthe audio is shorter than the video, the remaining part of the video will be silent.\nFor example, if the audio is 3 seconds long and the video duration is 5 seconds, the\nfirst 3 seconds of the output video will have sound, and the last 2 seconds will be silent.\n- Format: WAV, MP3.\n- Duration: 3 to 30 s.\n- File size: Up to 15 MB.\n"
+            },
+            "resolution": {
+              "title": "Resolution",
+              "default": "1080p",
+              "description": "Video resolution tier. Wan 2.6 T2V only supports 720p and 1080p (no 480p).",
+              "type": "string",
+              "enum": [
+                "720p",
+                "1080p"
+              ]
+            },
+            "enable_prompt_expansion": {
+              "title": "Enable Prompt Expansion",
+              "default": true,
+              "description": "Whether to enable prompt rewriting using LLM. Improves results for short prompts but increases processing time.",
+              "type": "boolean"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "examples": [
+                "Humorous but premium mini-trailer: a tiny fox 3D director proves \"multi-scene\" by calling simple commands that instantly change the set. Extreme photoreal 4K, cinematic lighting, subtle film grain, smooth camera. No subtitles, no UI, no watermark.\n\nShot 1 [0-3s] Macro close-up on the fox snapping a clapboard labeled \"fal\". the fox says : \"Action.\"\nShot 2 [3-6s] Hard cut: Wild West street at sunset. Wide shot, dust in the air. The Fox (in frame) points forward: \"Make it wide.\"\nShot 3 [6-10s] Hard cut: jungle river. The fox stands on a small boat. The camera pushes forward through vines and mist. Fox saying: \"Now… adventure.\"\nShot 4 [10-15s] Hard cut: space station window. Slow orbit around the fox with stars outside. Fox nods: \"Done. Next movie.\"\n"
+              ],
+              "description": "The text prompt for video generation. Supports Chinese and English, max 1500 characters. For multi-shot videos, use format: 'Overall description. First shot [0-3s] content. Second shot [3-5s] content.'",
+              "type": "string",
+              "minLength": 1
+            },
+            "aspect_ratio": {
+              "title": "Aspect Ratio",
+              "default": "16:9",
+              "description": "The aspect ratio of the generated video. Wan 2.6 supports additional ratios.",
+              "type": "string",
+              "enum": [
+                "16:9",
+                "9:16",
+                "1:1",
+                "4:3",
+                "3:4"
+              ]
+            },
+            "seed": {
+              "title": "Seed",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Random seed for reproducibility. If None, a random seed is chosen."
+            },
+            "enable_safety_checker": {
+              "title": "Enable Safety Checker",
+              "default": true,
+              "description": "If set to true, the safety checker will be enabled. Disabling it requires account authorization; unauthorized requests are always checked.",
+              "examples": [
+                true
+              ],
+              "type": "boolean"
+            },
+            "duration": {
+              "title": "Duration",
+              "type": "string",
+              "default": "5",
+              "description": "Duration of the generated video in seconds. Choose between 5, 10, or 15 seconds.",
+              "examples": [
+                "5",
+                "10",
+                "15"
+              ],
+              "enum": [
+                "5",
+                "10",
+                "15"
+              ]
+            }
+          },
+          "x-fal-order-properties": [
+            "prompt",
+            "audio_url",
+            "aspect_ratio",
+            "resolution",
+            "duration",
+            "negative_prompt",
+            "enable_prompt_expansion",
+            "multi_shots",
+            "seed",
+            "enable_safety_checker"
+          ],
+          "type": "object",
+          "description": "Input for Wan 2.6 text-to-video generation",
+          "required": [
+            "prompt"
+          ]
+        },
+        "Wan26T2vTextToVideoOutput": {
+          "title": "TextToVideoOutput",
+          "properties": {
+            "seed": {
+              "title": "Seed",
+              "examples": [
+                175932751
+              ],
+              "description": "The seed used for generation",
+              "type": "integer"
+            },
+            "video": {
+              "$ref": "#/components/schemas/VideoFile",
+              "examples": [
+                {
+                  "url": "https://v3b.fal.media/files/b/0a867564/PsHtrg623uJuI7DdRqXvb_etx4d0Un.mp4",
+                  "content_type": "video/mp4"
+                }
+              ],
+              "description": "The generated video file"
+            },
+            "actual_prompt": {
+              "title": "Actual Prompt",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "Humorous but premium mini-trailer: a tiny fox 3D director proves \"multi-scene\" by calling simple commands that instantly change the set. Extreme photoreal 4K, cinematic lighting, subtle film grain, smooth camera. No subtitles, no UI, no watermark.\n\nShot 1 [0-3s] Macro close-up on the fox snapping a clapboard labeled \"fal\". the fox says : \"Action.\"\nShot 2 [3-6s] Hard cut: Wild West street at sunset. Wide shot, dust in the air. The Fox (in frame) points forward: \"Make it wide.\"\nShot 3 [6-10s] Hard cut: jungle river. The fox stands on a small boat. The camera pushes forward through vines and mist. Fox saying: \"Now… adventure.\"\nShot 4 [10-15s] Hard cut: space station window. Slow orbit around the fox with stars outside. Fox nods: \"Done. Next movie.\"\n"
+              ],
+              "description": "The actual prompt used if prompt rewriting was enabled"
+            }
+          },
+          "x-fal-order-properties": [
+            "video",
+            "seed",
+            "actual_prompt"
+          ],
+          "type": "object",
+          "description": "Output for text-to-video generation",
+          "required": [
+            "video",
+            "seed"
+          ]
+        },
+        "VideoFile": {
+          "title": "VideoFile",
+          "properties": {
+            "width": {
+              "title": "Width",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The width of the video"
+            },
+            "file_name": {
+              "title": "File Name",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "z9RV14K95DvU.png"
+              ],
+              "description": "The name of the file. It will be auto-generated if not provided."
+            },
+            "file_size": {
+              "title": "File Size",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                4404019
+              ],
+              "description": "The size of the file in bytes."
+            },
+            "url": {
+              "title": "Url",
+              "type": "string",
+              "description": "The URL where the file can be downloaded from."
+            },
+            "height": {
+              "title": "Height",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The height of the video"
+            },
+            "content_type": {
+              "title": "Content Type",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "image/png"
+              ],
+              "description": "The mime type of the file."
+            },
+            "num_frames": {
+              "title": "Num Frames",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The number of frames in the video"
+            },
+            "duration": {
+              "title": "Duration",
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The duration of the video"
+            },
+            "fps": {
+              "title": "Fps",
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The FPS of the video"
+            }
+          },
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height",
+            "fps",
+            "duration",
+            "num_frames"
+          ],
+          "type": "object",
+          "required": [
+            "url"
+          ]
+        }
+      }
+    },
+    "paths": {
+      "/fal-ai/wan-26-t2v/text-to-video/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            },
+            {
+              "name": "logs",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "description": "Whether to include logs (`1`) in the response or not (`0`)."
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The request status.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-26-t2v/text-to-video/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The request was cancelled.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "description": "Whether the request was cancelled successfully."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-26-t2v/text-to-video": {
+        "post": {
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wan26T2vTextToVideoInput"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "The request status.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/wan-26-t2v/text-to-video/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Result of the request.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Wan26T2vTextToVideoOutput"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ],
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ]
+  }
+}

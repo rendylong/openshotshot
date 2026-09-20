@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+out/
+build-app/
+web/dist/
+web/public/plugins/
+plugins/*/dist/
+
+# electron packaging
+*.dmg
+*.exe
+*.exe.blockmap
+*.AppImage
+*.zip
+mac-arm64/
+win-unpacked/
+linux-unpacked/
+latest*.yml
+
+# logs & caches
+*.log
+.DS_Store
+.turbo/
+.eslintcache
+.stylelintcache
+tsconfig.tsbuildinfo
+output/
+
+# local tooling state
+.playwright-cli/
+.gstack/
+.worktrees/
+.zcodeignore
+.vercel/
+.env
+.env.*
+
+# migration working docs (specs & plans for this restructuring; never committed)
+.superpowers/
+docs/superpowers/
+
+# vitest
+coverage/

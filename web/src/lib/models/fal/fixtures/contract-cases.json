@@ -1,0 +1,1044 @@
+[
+  {
+    "endpointId": "fal-ai/flux-2-pro",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "landscape_4_3",
+      "output_format": "jpeg"
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/flux-2-pro/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "auto",
+      "output_format": "jpeg",
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "1:1",
+      "output_format": "png",
+      "num_images": 1
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "auto",
+      "output_format": "png",
+      "num_images": 1,
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana-pro",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "1:1",
+      "output_format": "png",
+      "resolution": "1K",
+      "num_images": 1
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana-pro/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "auto",
+      "output_format": "png",
+      "resolution": "1K",
+      "num_images": 1,
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana-2",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "auto",
+      "output_format": "png",
+      "resolution": "1K",
+      "num_images": 1
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/nano-banana-2/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "aspect_ratio": "auto",
+      "output_format": "png",
+      "resolution": "1K",
+      "num_images": 1,
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "openai/gpt-image-2",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "landscape_4_3",
+      "quality": "high",
+      "output_format": "png",
+      "num_images": 1
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "openai/gpt-image-2/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "auto",
+      "quality": "high",
+      "output_format": "png",
+      "num_images": 1,
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "bytedance/seedream/v5/pro/text-to-image",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "auto_2K",
+      "output_format": "jpeg",
+      "num_images": 1
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "bytedance/seedream/v5/pro/edit",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_size": "auto_2K",
+      "output_format": "jpeg",
+      "num_images": 1,
+      "image_urls": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ]
+    },
+    "providerOutput": {
+      "images": [
+        {
+          "url": "https://example.test/result.jpg",
+          "content_type": "image/jpeg"
+        }
+      ],
+      "seed": 1
+    },
+    "expectedResult": {
+      "kind": "image",
+      "sources": [
+        "https://example.test/result.jpg"
+      ]
+    }
+  },
+  {
+    "endpointId": "fal-ai/kling-video/v3/pro/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "aspect_ratio": "16:9",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/kling-video/v3/pro/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "generate_audio": false,
+      "start_image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/kling-video/v3/standard/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "aspect_ratio": "16:9",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/kling-video/v3/standard/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "generate_audio": false,
+      "start_image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "16:9",
+      "resolution": "720p",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1/first-last-frame-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "first_frame_url": "https://example.test/first.png",
+      "last_frame_url": "https://example.test/last.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1/fast",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "16:9",
+      "resolution": "720p",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1/fast/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/veo3.1/fast/first-last-frame-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png",
+        "https://example.test/last.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "8s",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "first_frame_url": "https://example.test/first.png",
+      "last_frame_url": "https://example.test/last.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "bytedance/seedance-2.0/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "auto",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "bytedance/seedance-2.0/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "auto",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "bytedance/seedance-2.0/fast/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "auto",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "bytedance/seedance-2.0/fast/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "auto",
+      "aspect_ratio": "auto",
+      "resolution": "720p",
+      "generate_audio": false,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "wan/v2.6/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "aspect_ratio": "16:9",
+      "resolution": "1080p"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "wan/v2.6/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "5",
+      "resolution": "1080p",
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/minimax/hailuo-2.3/pro/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/minimax/hailuo-2.3/pro/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/minimax/hailuo-2.3/standard/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "6"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/minimax/hailuo-2.3/standard/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": "6",
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/ltx-2.3/text-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": 6,
+      "aspect_ratio": "16:9",
+      "resolution": "1080p",
+      "generate_audio": false,
+      "fps": 25
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/ltx-2.3/text-to-video/fast",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": 6,
+      "aspect_ratio": "16:9",
+      "resolution": "1080p",
+      "generate_audio": false,
+      "fps": 25
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/ltx-2.3/image-to-video",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": 6,
+      "aspect_ratio": "auto",
+      "resolution": "1080p",
+      "generate_audio": false,
+      "fps": 25,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  },
+  {
+    "endpointId": "fal-ai/ltx-2.3/image-to-video/fast",
+    "request": {
+      "prompt": "A red ceramic cup on a table",
+      "images": [
+        "https://example.test/first.png"
+      ],
+      "params": {}
+    },
+    "expectedInput": {
+      "prompt": "A red ceramic cup on a table",
+      "duration": 6,
+      "aspect_ratio": "auto",
+      "resolution": "1080p",
+      "generate_audio": false,
+      "fps": 25,
+      "image_url": "https://example.test/first.png"
+    },
+    "providerOutput": {
+      "video": {
+        "url": "https://example.test/result.mp4",
+        "content_type": "video/mp4"
+      }
+    },
+    "expectedResult": {
+      "kind": "video",
+      "source": "https://example.test/result.mp4",
+      "mimeType": "video/mp4"
+    }
+  }
+]

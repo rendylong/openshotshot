@@ -1,0 +1,960 @@
+{
+  "status": "research snapshot; not runtime configuration",
+  "workflows": [
+    {
+      "id": "minimax_h3_b99_002",
+      "name": "H3首尾帧生成视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_b99_002",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "first_frame": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "last_frame": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "prompt": {
+          "required": true,
+          "type": "string",
+          "min_length": 1,
+          "max_length": 10000
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "736p竖",
+          "options": [
+            "736p竖",
+            "736p横",
+            "736p(1:1)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 865339729647738
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_b99_001",
+      "name": "H3文生视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_b99_001",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "string",
+          "min_length": 1,
+          "max_length": 10000
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "736p竖",
+          "options": [
+            "736p竖",
+            "736p横",
+            "736p(1:1)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 865339729647738
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_b99_003_12s",
+      "name": "H3多图生视频12秒",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_b99_003_12s",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 12,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "string",
+          "min_length": 1,
+          "max_length": 10000
+        },
+        "ref_image_0": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_1": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_2": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_3": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_4": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_5": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_6": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_7": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_8": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "736p竖",
+          "options": [
+            "736p竖",
+            "736p横",
+            "736p(1:1)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 865339729647738
+        }
+      }
+    },
+    {
+      "id": "wan2.2animate-v4-motion_retargeting",
+      "name": "动作迁移",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/wan2.2animate-v4-motion_retargeting",
+      "inputRules": {
+        "ref_image": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_video": {
+          "required": true,
+          "type": "video",
+          "accept_types": [
+            "video/mp4",
+            "video/webm"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "464*832px(竖版)",
+          "options": [
+            "464*832px(竖版)",
+            "832*464px(横版)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 485581468409274
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_image_audio_to_video_v2_15s",
+      "name": "H3多图多音频生视频15秒",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_image_audio_to_video_v2_15s",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 10000
+        },
+        "ref_audio_0": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_1": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_2": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_image_0": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_1": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_2": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_3": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_4": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_5": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_6": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_7": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_8": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "480p横",
+            "768p横"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 731242627237534
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_lightx2v_v5_15s",
+      "name": "H3多图生视频15秒",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_lightx2v_v5_15s",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 500000
+        },
+        "ref_image_0": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_1": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_2": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_3": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_4": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_5": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_6": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_7": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_8": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "480p横",
+            "768p横",
+            "480p(1:1)",
+            "768p(1:1)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 212238359716024
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_image_audio_to_video_v2",
+      "name": "H3多图多音频生视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_image_audio_to_video_v2",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 10,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 10000
+        },
+        "ref_audio_0": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_1": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_2": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_image_0": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_1": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_2": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_3": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_4": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_5": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_6": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_7": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_8": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "1080p竖",
+            "480p横",
+            "768p横",
+            "1080p横"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 731242627237534
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_image_audio_to_video",
+      "name": "H3图生视频-音频同步(自动对口型)",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_image_audio_to_video",
+      "inputRules": {
+        "audio_duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "ref_audio_0": {
+          "required": true,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_image_0": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "1080p竖",
+            "480p横",
+            "768p横",
+            "1080p横"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_lightx2v_v5",
+      "name": "H3多图参考生视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_lightx2v_v5",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 10,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 500000
+        },
+        "ref_image_0": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_1": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_2": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_3": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_4": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_5": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_6": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_7": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_image_8": {
+          "required": false,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "ref_audio_0": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_1": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "ref_audio_2": {
+          "required": false,
+          "type": "audio",
+          "accept_types": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/mp4",
+            "audio/flac"
+          ]
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "1080p竖",
+            "480p横",
+            "768p横",
+            "1080p横",
+            "480p(1:1)",
+            "768p(1:1)",
+            "1080p(1:1)"
+          ]
+        },
+        "seed": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 999999999999999,
+          "default": 212238359716024
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_lightx2v_no_pic",
+      "name": "H3文生视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_lightx2v_no_pic",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "integer",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 200000
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "480p横",
+            "768p横",
+            "480p(1:1)",
+            "768p(1:1)"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minimax_h3_lightx2v",
+      "name": "H3首尾帧生成视频",
+      "source": "https://autodl.art/api/v1/comfyui/workflows/minimax_h3_lightx2v",
+      "inputRules": {
+        "duration": {
+          "required": false,
+          "type": "number",
+          "min": 1,
+          "max": 15,
+          "default": 5
+        },
+        "first_frame": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "last_frame": {
+          "required": true,
+          "type": "image",
+          "accept_types": [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+          ]
+        },
+        "prompt": {
+          "required": true,
+          "type": "prompt",
+          "min_length": 1,
+          "max_length": 2000000
+        },
+        "resolution": {
+          "required": false,
+          "type": "enum",
+          "default": "768p竖",
+          "options": [
+            "480p竖",
+            "768p竖",
+            "480p横",
+            "768p横",
+            "480p(1:1)",
+            "768p(1:1)"
+          ]
+        }
+      }
+    }
+  ]
+}

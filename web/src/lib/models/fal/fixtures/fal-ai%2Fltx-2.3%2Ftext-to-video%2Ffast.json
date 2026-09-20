@@ -1,0 +1,447 @@
+{
+  "endpointId": "fal-ai/ltx-2.3/text-to-video/fast",
+  "openapi": {
+    "openapi": "3.0.4",
+    "info": {
+      "title": "Queue OpenAPI for fal-ai/ltx-2.3/text-to-video/fast",
+      "version": "1.0.0",
+      "description": "The OpenAPI schema for the fal-ai/ltx-2.3/text-to-video/fast queue.",
+      "x-fal-metadata": {
+        "endpointId": "fal-ai/ltx-2.3/text-to-video/fast",
+        "category": "text-to-video",
+        "thumbnailUrl": "https://v3b.fal.media/files/b/0a90df05/Q8IcsF5FX1zYHwG048tqT_320cb845b0c74f44920f1c6520981b9e.jpg",
+        "playgroundUrl": "https://fal.ai/models/fal-ai/ltx-2.3/text-to-video/fast",
+        "documentationUrl": "https://fal.ai/models/fal-ai/ltx-2.3/text-to-video/fast/api",
+        "about": "Generate a video from a text prompt."
+      }
+    },
+    "components": {
+      "securitySchemes": {
+        "apiKeyAuth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "Authorization",
+          "description": "Fal Key"
+        }
+      },
+      "schemas": {
+        "QueueStatus": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "IN_QUEUE",
+                "IN_PROGRESS",
+                "COMPLETED"
+              ]
+            },
+            "request_id": {
+              "type": "string",
+              "description": "The request id."
+            },
+            "response_url": {
+              "type": "string",
+              "description": "The response url."
+            },
+            "status_url": {
+              "type": "string",
+              "description": "The status url."
+            },
+            "cancel_url": {
+              "type": "string",
+              "description": "The cancel url."
+            },
+            "logs": {
+              "type": "object",
+              "description": "The logs.",
+              "additionalProperties": true
+            },
+            "metrics": {
+              "type": "object",
+              "description": "The metrics.",
+              "additionalProperties": true
+            },
+            "queue_position": {
+              "type": "integer",
+              "description": "The queue position."
+            }
+          },
+          "required": [
+            "status",
+            "request_id"
+          ]
+        },
+        "Ltx23TextToVideoFastInput": {
+          "title": "LTXV23TextToVideoFastRequest",
+          "type": "object",
+          "required": [
+            "prompt"
+          ],
+          "properties": {
+            "duration": {
+              "title": "Duration",
+              "enum": [
+                6,
+                8,
+                10,
+                12,
+                14,
+                16,
+                18,
+                20
+              ],
+              "default": 6,
+              "type": "integer",
+              "description": "The duration of the generated video in seconds. The fast model supports 6-20 seconds. Note: Durations longer than 10 seconds (12, 14, 16, 18, 20) are only supported with 25 FPS and 1080p resolution."
+            },
+            "generate_audio": {
+              "title": "Generate Audio",
+              "description": "Whether to generate audio for the generated video",
+              "default": true,
+              "type": "boolean"
+            },
+            "resolution": {
+              "title": "Resolution",
+              "enum": [
+                "1080p",
+                "1440p",
+                "2160p"
+              ],
+              "default": "1080p",
+              "type": "string",
+              "description": "The resolution of the generated video"
+            },
+            "aspect_ratio": {
+              "title": "Aspect Ratio",
+              "enum": [
+                "16:9",
+                "9:16"
+              ],
+              "default": "16:9",
+              "type": "string",
+              "description": "The aspect ratio of the generated video"
+            },
+            "fps": {
+              "title": "Frames per Second",
+              "enum": [
+                24,
+                25,
+                48,
+                50
+              ],
+              "default": 25,
+              "type": "integer",
+              "description": "The frames per second of the generated video"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "description": "The prompt to use for the generated video",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 5000,
+              "examples": [
+                "Drone descent through the open oculus of a derelict Soviet-era radio telescope dish, spiraling downward into the rusted parabolic bowl where a lone botanist catalogs wildflowers growing through cracked concrete, her red jacket the only color against oxidized metal and grey sky, 24mm on a caged FPV drone, the descent creating a vertigo spiral, Tarkovsky Stalker zones of alien beauty reclaiming technology, science swallowed by nature"
+              ]
+            }
+          },
+          "x-fal-order-properties": [
+            "prompt",
+            "duration",
+            "resolution",
+            "aspect_ratio",
+            "fps",
+            "generate_audio"
+          ]
+        },
+        "Ltx23TextToVideoFastOutput": {
+          "title": "LTXV23TextToVideoFastResponse",
+          "type": "object",
+          "required": [
+            "video"
+          ],
+          "properties": {
+            "video": {
+              "description": "The generated video file",
+              "$ref": "#/components/schemas/VideoFile",
+              "examples": [
+                {
+                  "content_type": "video/mp4",
+                  "file_name": "7ufClzCcdMD-up1rau1jF_6xx4WLgg.mp4",
+                  "url": "https://v3b.fal.media/files/b/0a90dde7/7ufClzCcdMD-up1rau1jF_6xx4WLgg.mp4"
+                }
+              ]
+            }
+          },
+          "x-fal-order-properties": [
+            "video"
+          ]
+        },
+        "VideoFile": {
+          "title": "VideoFile",
+          "type": "object",
+          "required": [
+            "url"
+          ],
+          "properties": {
+            "file_name": {
+              "title": "File Name",
+              "description": "The name of the file. It will be auto-generated if not provided.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "z9RV14K95DvU.png"
+              ]
+            },
+            "width": {
+              "title": "Width",
+              "description": "The width of the video",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "url": {
+              "title": "Url",
+              "description": "The URL where the file can be downloaded from.",
+              "type": "string"
+            },
+            "duration": {
+              "title": "Duration",
+              "description": "The duration of the video",
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "content_type": {
+              "title": "Content Type",
+              "description": "The mime type of the file.",
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                "image/png"
+              ]
+            },
+            "fps": {
+              "title": "Fps",
+              "description": "The FPS of the video",
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "num_frames": {
+              "title": "Num Frames",
+              "description": "The number of frames in the video",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "file_size": {
+              "title": "File Size",
+              "description": "The size of the file in bytes.",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "examples": [
+                4404019
+              ]
+            },
+            "height": {
+              "title": "Height",
+              "description": "The height of the video",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "x-fal-order-properties": [
+            "url",
+            "content_type",
+            "file_name",
+            "file_size",
+            "width",
+            "height",
+            "fps",
+            "duration",
+            "num_frames"
+          ]
+        }
+      }
+    },
+    "paths": {
+      "/fal-ai/ltx-2.3/text-to-video/fast/requests/{request_id}/status": {
+        "get": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            },
+            {
+              "name": "logs",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "number",
+                "description": "Whether to include logs (`1`) in the response or not (`0`)."
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The request status.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/ltx-2.3/text-to-video/fast/requests/{request_id}/cancel": {
+        "put": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The request was cancelled.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "description": "Whether the request was cancelled successfully."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/ltx-2.3/text-to-video/fast": {
+        "post": {
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ltx23TextToVideoFastInput"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "The request status.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/QueueStatus"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/fal-ai/ltx-2.3/text-to-video/fast/requests/{request_id}": {
+        "get": {
+          "parameters": [
+            {
+              "name": "request_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Request ID"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Result of the request.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/Ltx23TextToVideoFastOutput"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://queue.fal.run"
+      }
+    ],
+    "security": [
+      {
+        "apiKeyAuth": []
+      }
+    ]
+  }
+}

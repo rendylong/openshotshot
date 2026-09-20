@@ -1,0 +1,272 @@
+/* 脚本管理界面局部样式：镜头表格内联编辑 + 内联实体胶囊。
+   颜色一律走主题语义 token（--border/--ring/--foreground 等），胶囊配色由
+   richToHtml 输出的 Tailwind 语义类携带，此处只负责结构与交互态。 */
+
+.script-studio-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.script-studio-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 7px 8px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--background);
+    white-space: nowrap;
+}
+
+.script-studio-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    vertical-align: top;
+}
+
+.script-studio-table tr:hover td {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- token 派生色（color-mix），闸门暂只放行裸 var() */
+    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+
+/* 单元格内联编辑：无边框，hover/focus 才浮现 */
+.script-cell-input,
+.script-cell-select {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 6px 7px;
+    color: inherit;
+}
+
+.script-cell-input:hover,
+.script-cell-select:hover {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- token 派生色（color-mix），闸门暂只放行裸 var() */
+    border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+.script-cell-input:focus,
+.script-cell-select:focus {
+    outline: none;
+    border-color: var(--ring);
+}
+
+/* 第3步提示词编辑区（右栏属性面板内）：外层容器承担边框与底色，内层纵向弹性填满。
+   刻意不设 max-height——高度由 flex-1 跟随左列（预览+分镜条）底边对齐决定。 */
+.rich-desc.prompt-block {
+    min-height: 280px;
+    overflow-y: auto;
+    font-size: 13px;
+    border-color: transparent;
+}
+
+.rich-desc.prompt-block:hover {
+    border-color: transparent;
+}
+
+/* 时长数字输入：隐藏原生 spinner，保持单元格干净（键盘上下键仍可用） */
+.script-cell-input[type="number"]::-webkit-outer-spin-button,
+.script-cell-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.script-cell-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* 富文本描述单元格：行高 2 使 24px 胶囊在行内有呼吸空间，多行胶囊不挤压 */
+.rich-desc {
+    min-height: 44px;
+    padding: 6px 7px;
+    line-height: 2;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: text;
+}
+
+.rich-desc:hover {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- token 派生色（color-mix），闸门暂只放行裸 var() */
+    border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+}
+
+.rich-desc:focus {
+    outline: none;
+    border-color: var(--ring);
+}
+
+.rich-desc:empty::before {
+    content: attr(data-placeholder);
+    opacity: 0.45;
+}
+
+/* 内联实体胶囊：结构在此，配色类由 richToHtml 注入（bg-amber-600/15 等 Tailwind 语义类）。
+   形状与分镜卡/提示词卡的 rounded-md chip 对齐：6px 圆角、24px 高。 */
+.inline-entity {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 24px;
+    font-size: 12px;
+    padding: 0 8px;
+    border-radius: 6px;
+    margin: 0 1px;
+    vertical-align: baseline;
+    user-select: all;
+}
+
+/* 行尾删除按钮与单元格内容垂直居中 */
+.script-studio-table td:last-child {
+    vertical-align: middle;
+}
+
+/* @ 实体选择浮层 */
+.entity-picker {
+    position: fixed;
+    z-index: 120;
+    min-width: 210px;
+    border-radius: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    border: 1px solid var(--border);
+    background: var(--background);
+}
+
+/* 镜头词汇单元格 combobox 浮层（ShotCellCombo）：与 .entity-picker 同款密度与层级，
+   但独立类——min-width 贴单元格宽而非 210px 固定值 */
+.script-cell-combo-popup {
+    position: fixed;
+    z-index: 120;
+    max-width: 280px;
+    max-height: 240px;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+    border: 1px solid var(--border);
+    background: var(--background);
+}
+
+.script-cell-combo-popup .ep-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.script-cell-combo-popup .ep-item.active {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- token 派生色（color-mix），闸门暂只放行裸 var() */
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+.entity-picker .ep-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+}
+
+.entity-picker .ep-item.active {
+    /* stylelint-disable-next-line declaration-property-value-allowed-list -- token 派生色（color-mix），闸门暂只放行裸 var() */
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+/* 空态：说明 + 「去准备资产」动作 */
+.entity-picker .ep-empty {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    cursor: default;
+    opacity: 1;
+}
+
+.entity-picker .ep-empty span {
+    opacity: 0.6;
+}
+
+.entity-picker .ep-action {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 12px;
+    color: var(--foreground);
+    background: transparent;
+    cursor: pointer;
+}
+
+.entity-picker .ep-action:hover {
+    border-color: var(--ring);
+}
+
+/* 新建资产行：分隔线 + 名称 + 分组档位切换（点击 chip 只切档，点击行其余区域创建） */
+.entity-picker .ep-divider {
+    height: 1px;
+    margin: 2px 0;
+    background: var(--border);
+}
+
+.entity-picker .ep-create .ep-create-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.entity-picker .ep-groups {
+    margin-left: auto;
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.entity-picker .ep-group-chip {
+    flex: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted-foreground);
+    background: transparent;
+    cursor: pointer;
+}
+
+.entity-picker .ep-group-chip.active {
+    border-color: var(--ring);
+    color: var(--foreground);
+}
+
+/* 列表行/摘要的语序内联引用芯片（spec 2026-09-16 D9）：随文本排版，非独立 chips 行 */
+.iref {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  margin: 0 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--secondary);
+  color: var(--info);
+  font-size: 0.92em;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* 检查器变体描述编辑区：自动增高（2–6 行封顶后内部滚动） */
+.rich-desc--inspector {
+  min-height: 4.5rem;
+  max-height: 12rem;
+  overflow-y: auto;
+}

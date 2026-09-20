@@ -1,0 +1,238 @@
+diff --git a/node_modules/@earendil-works/pi-coding-agent/dist/core/skills.js b/node_modules/@earendil-works/pi-coding-agent/dist/core/skills.js
+index 56cf7a3..37b7400 100644
+--- a/node_modules/@earendil-works/pi-coding-agent/dist/core/skills.js
++++ b/node_modules/@earendil-works/pi-coding-agent/dist/core/skills.js
+@@ -279,7 +279,7 @@ export function formatSkillsForPrompt(skills) {
+     }
+     const lines = [
+         "\n\nThe following skills provide specialized instructions for specific tasks.",
+-        "Use the read tool to load a skill's file when the task matches its description.",
++        "Use the read tool with the location path to load a skill's SKILL.md when the task matches its description.",
+         "When a skill file references a relative path, resolve it against the skill directory (parent of SKILL.md / dirname of the path) and use that absolute path in tool commands.",
+         "",
+         "<available_skills>",
+diff --git a/node_modules/@earendil-works/pi-coding-agent/dist/core/system-prompt.js b/node_modules/@earendil-works/pi-coding-agent/dist/core/system-prompt.js
+index 6bcf2d7..3cdf7c0 100644
+--- a/node_modules/@earendil-works/pi-coding-agent/dist/core/system-prompt.js
++++ b/node_modules/@earendil-works/pi-coding-agent/dist/core/system-prompt.js
+@@ -1,13 +1,71 @@
+ /**
+  * System prompt construction and project context loading
+  */
+-import { getDocsPath, getExamplesPath, getReadmePath } from "../config.js";
+ import { formatSkillsForPrompt } from "./skills.js";
++
++const SHOTSHOT_SYSTEM_PROMPT = `你是 **ShotShot**，一个面向创意画布的多模态创作 Agent。
++
++你的核心职责是理解用户的创作意图，并主动使用可用工具，帮助用户完成 **图片、视频、3D、音频** 等内容的创作、编辑、转换与迭代，能够在画布中持续推进创作任务的执行型 Agent。
++
++## 核心原则
++
++1. **理解意图**
++
++   - 优先理解用户真正想要得到的最终结果，而不是机械执行字面指令。
++   - 结合当前画布内容、已有素材、上下文和用户要求进行判断。
++   - 当信息已经足够时，直接开始执行，不要进行不必要的确认。
++
++2. **工具优先**
++
++   - 当任务可以通过工具直接完成时，优先调用工具，而不是仅告诉用户应该怎么做。
++   - 根据任务选择最合适的图片、视频、3D、音频或其他创作工具。
++   - 一个任务可以组合多个工具，并按照合理顺序连续执行。
++
++3. **结果导向**
++
++   - 始终围绕用户希望获得的最终创作结果推进任务。
++   - 不要把"生成 Prompt""分析素材"或"调用某个工具"本身当作最终目标，除非用户明确这样要求。
++   - 如果一次生成结果不足以完成用户目标，应继续进行必要的编辑、调整或转换。
++
++4. **保持创作连续性**
++
++   - 尊重当前画布已有内容与设计方向。
++   - 修改已有作品时，尽量保留用户没有要求改变的部分。
++   - 在多轮对话中保持对主体、风格、构图、材质、颜色、镜头和其他关键设定的一致性。
++
++5. **主动但不过度**
++
++   - 对明显的缺陷或不合理之处，可以在不偏离用户意图的前提下进行合理优化。
++   - 不要擅自加入会明显改变创意方向的重要元素。
++   - 如果存在多个合理方案，优先选择最符合当前上下文和专业创作习惯的方案。
++   - 不要使用 emoji
++
++## 脚本创作工作流
++
++创建或修改脚本节点时：
++- 先创建资产（角色/场景/道具）：调用 canvas_script_asset，每个资产必须填全 role/appearance/consistency/imagePrompt，只给名字会让参考图与一致性失效。
++- 分镜内容由你自行创作，写好后用 canvas_script_replace_shots 一次性写入全部镜头，镜头的 entityRefs 传实体名以建立引用。
++- 生成中的脚本节点不可打开，完成写入后自动解除。
++
++## 交互方式
++
++在执行创作任务时：
++
++- 简洁回应用户当前需求。
++- 必要时说明你准备进行的关键操作。
++- 随后调用合适的工具完成任务。
++- 避免输出冗长的创作理论、工具说明或无关解释。
++- 用户更关心作品本身，而不是你的工作过程。
++
++你的目标是让用户能够像和一位专业的创意搭档合作一样，通过自然语言在画布中持续完成创作。`;
++
+ /** Build the system prompt with tools, guidelines, and context */
+ export function buildSystemPrompt(options) {
+     const { customPrompt, selectedTools, toolSnippets, promptGuidelines, appendSystemPrompt, cwd, contextFiles: providedContextFiles, skills: providedSkills, } = options;
+-    const promptCwd = cwd.replace(/\\/g, "/");
+-    const appendSection = appendSystemPrompt ? `\n\n${appendSystemPrompt}` : "";
++    const promptCwd = cwd.replace(/\\\\/g, "/");
++    const appendSection = appendSystemPrompt ? `\
++\
++${appendSystemPrompt}` : "";
+     const contextFiles = providedContextFiles ?? [];
+     const skills = providedSkills ?? [];
+     if (customPrompt) {
+@@ -15,33 +73,38 @@ export function buildSystemPrompt(options) {
+         if (appendSection) {
+             prompt += appendSection;
+         }
+-        // Append project context files
+         if (contextFiles.length > 0) {
+-            prompt += "\n\n<project_context>\n\n";
+-            prompt += "Project-specific instructions and guidelines:\n\n";
++            prompt += "\
++\
++<project_context>\
++\
++";
++            prompt += "Project-specific instructions and guidelines:\
++\
++";
+             for (const { path: filePath, content } of contextFiles) {
+-                prompt += `<project_instructions path="${filePath}">\n${content}\n</project_instructions>\n\n`;
++                prompt += `<project_instructions path="${filePath}">\
++${content}\
++</project_instructions>\
++\
++`;
+             }
+-            prompt += "</project_context>\n";
++            prompt += "</project_context>\
++";
+         }
+-        // Append skills section (only if read tool is available)
+-        const customPromptHasRead = !selectedTools || selectedTools.includes("read");
+-        if (customPromptHasRead && skills.length > 0) {
++        if (skills.length > 0) {
+             prompt += formatSkillsForPrompt(skills);
+         }
+-        prompt += `\nCurrent working directory: ${promptCwd}\n`;
++        prompt += `\
++Current working directory: ${promptCwd}\
++`;
+         return prompt;
+     }
+-    // Get absolute paths to documentation and examples
+-    const readmePath = getReadmePath();
+-    const docsPath = getDocsPath();
+-    const examplesPath = getExamplesPath();
+     // Build tools list based on selected tools.
+-    // A tool appears in Available tools only when the caller provides a one-line snippet.
+-    const tools = selectedTools || ["read", "bash", "edit", "write"];
++    const tools = selectedTools || [];
+     const visibleTools = tools.filter((name) => !!toolSnippets?.[name]);
+     const toolsList = visibleTools.length > 0 ? visibleTools.map((name) => `- ${name}: ${toolSnippets[name]}`).join("\n") : "(none)";
+-    // Build guidelines based on which tools are actually available
++    // Build guidelines from tool promptGuidelines
+     const guidelinesList = [];
+     const guidelinesSet = new Set();
+     const addGuideline = (guideline) => {
+@@ -51,69 +114,47 @@ export function buildSystemPrompt(options) {
+         guidelinesSet.add(guideline);
+         guidelinesList.push(guideline);
+     };
+-    const hasBash = tools.includes("bash");
+-    const hasPowerShell = tools.includes("powershell");
+-    const hasGrep = tools.includes("grep");
+-    const hasFind = tools.includes("find");
+-    const hasLs = tools.includes("ls");
+-    const hasRead = tools.includes("read");
+-    // File exploration guidelines
+-    if ((hasBash || hasPowerShell) && !hasGrep && !hasFind && !hasLs) {
+-        if (hasBash && hasPowerShell) {
+-            addGuideline("Use bash or PowerShell for file operations like listing, searching, and finding files");
+-        }
+-        else if (hasPowerShell) {
+-            addGuideline("Use PowerShell for file operations like listing, searching, and finding files");
+-        }
+-        else {
+-            addGuideline("Use bash for file operations like ls, rg, find");
+-        }
+-    }
+     for (const guideline of promptGuidelines ?? []) {
+         const normalized = guideline.trim();
+         if (normalized.length > 0) {
+             addGuideline(normalized);
+         }
+     }
+-    // Always include these
+-    addGuideline("Be concise in your responses");
+-    addGuideline("Show file paths clearly when working with files");
+-    const guidelines = guidelinesList.map((g) => `- ${g}`).join("\n");
+-    let prompt = `You are an expert coding assistant operating inside pi, a coding agent harness. You help users by reading files, executing commands, editing code, and writing new files.
++    const guidelines = guidelinesList.length > 0 ? guidelinesList.map((g) => `- ${g}`).join("\n") : "(none)";
++    let prompt = `${SHOTSHOT_SYSTEM_PROMPT}
+ 
+ Available tools:
+ ${toolsList}
+ 
+-In addition to the tools above, you may have access to other custom tools depending on the project.
+-
+ Guidelines:
+-${guidelines}
+-
+-Pi documentation (read only when the user asks about pi itself, its SDK, extensions, themes, skills, or TUI):
+-- Main documentation: ${readmePath}
+-- Additional docs: ${docsPath}
+-- Examples: ${examplesPath} (extensions, custom tools, SDK)
+-- When reading pi docs or examples, resolve docs/... under Additional docs and examples/... under Examples, not the current working directory
+-- When asked about: extensions (docs/extensions.md, examples/extensions/), themes (docs/themes.md), skills (docs/skills.md), prompt templates (docs/prompt-templates.md), TUI components (docs/tui.md), keybindings (docs/keybindings.md), SDK integrations (docs/sdk.md), custom providers (docs/custom-provider.md), adding models (docs/models.md), pi packages (docs/packages.md), environment variables (docs/environment-variables.md)
+-- When working on pi topics, read the docs and examples, and follow .md cross-references before implementing
+-- Always read pi .md files completely and follow links to related docs (e.g., tui.md for TUI API details)`;
++${guidelines}`;
+     if (appendSection) {
+         prompt += appendSection;
+     }
+-    // Append project context files
+     if (contextFiles.length > 0) {
+-        prompt += "\n\n<project_context>\n\n";
+-        prompt += "Project-specific instructions and guidelines:\n\n";
++        prompt += "\
++\
++<project_context>\
++\
++";
++        prompt += "Project-specific instructions and guidelines:\
++\
++";
+         for (const { path: filePath, content } of contextFiles) {
+-            prompt += `<project_instructions path="${filePath}">\n${content}\n</project_instructions>\n\n`;
++            prompt += `<project_instructions path="${filePath}">\
++${content}\
++</project_instructions>\
++\
++`;
+         }
+-        prompt += "</project_context>\n";
++        prompt += "</project_context>\
++";
+     }
+-    // Append skills section (only if read tool is available)
+-    if (hasRead && skills.length > 0) {
++    if (skills.length > 0) {
+         prompt += formatSkillsForPrompt(skills);
+     }
+-    prompt += `\nCurrent working directory: ${promptCwd}`;
++    prompt += `\
++Current working directory: ${promptCwd}`;
+     return prompt;
+ }
+ //# sourceMappingURL=system-prompt.js.map

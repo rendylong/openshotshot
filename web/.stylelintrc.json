@@ -1,0 +1,16 @@
+{
+    "extends": ["stylelint-config-standard"],
+    "rules": {
+        "declaration-property-value-allowed-list": [
+            { "/^background$|^color$|^border.*color$|^fill$|^stroke$/": ["/^var\\(/", "/^transparent$/", "/^currentColor$/", "/^inherit$/"] }
+        ],
+        "selector-class-pattern": null,
+        "alpha-value-notation": null,
+        "property-no-vendor-prefix": null,
+        "no-descending-specificity": null,
+        "import-notation": null,
+        "declaration-property-value-keyword-no-deprecated": null,
+        "declaration-empty-line-before": null
+    },
+    "ignoreFiles": ["node_modules/**", "dist/**", "src/styles/globals.css", "src/components/agent/agent-aicss.css"]
+}
