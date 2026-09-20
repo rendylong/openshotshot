@@ -778,7 +778,6 @@ const zhCN = {
         openAgent: "打开 Agent",
         closeAgent: "收起 Agent",
         plugins: "节点插件",
-        repo: "项目主页",
         switchLanguage: "切换到 {{language}}",
         shortcuts: "快捷键",
         lightTheme: "切换到浅色主题",

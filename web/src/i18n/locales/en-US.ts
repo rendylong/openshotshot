@@ -774,7 +774,6 @@ const enUS = {
         openAgent: "Open Agent",
         closeAgent: "Close Agent",
         plugins: "Node plugins",
-        repo: "GitHub",
         switchLanguage: "Switch to {{language}}",
         shortcuts: "Keyboard shortcuts",
         lightTheme: "Switch to light theme",

@@ -1,13 +1,16 @@
 # 构建 Vite 前端产物。
-FROM oven/bun:1.3.13 AS web-build
+FROM node:22-alpine AS web-build
 
 WORKDIR /app/web
-COPY web/package.json web/bun.lock ./
-RUN --mount=type=cache,target=/root/.bun/install/cache bun install --cache-dir=/root/.bun/install/cache
+# .npmrc 的 legacy-peer-deps 与仓库约定保持一致，npm ci 依赖它。
+COPY .npmrc ./
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+# vite.config.ts 读取仓库根的 VERSION 注入 __APP_VERSION__。
 COPY VERSION /app/VERSION
 COPY CHANGELOG.md /app/CHANGELOG.md
-COPY web ./
-RUN bun run build
+COPY web/ ./
+RUN npm run build
 
 # 运行镜像：只启动静态前端，AI 请求由浏览器前台直连用户自己的接口。
 FROM nginx:1.27-alpine

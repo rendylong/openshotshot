@@ -2,7 +2,7 @@
 
 设计语言一句话：**暖中性纸感（stone 灰阶）× 白纸画布 × 扁平极简工具 × 单一强调黑 × 大圆角柔影浮层**。
 
-权威源：CSS 变量以 `web/src/styles/globals.css` 为唯一权威；TS 侧常量在 `web/src/lib/design/`（`palette.ts` / `z-layers.ts` / `modal.ts`），由 `token-guard` 测试保证同值。本文只做速查，不抄全部 hex。完整规范见 `docs/superpowers/specs/2026-09-08-design-token-unification-design.md`。
+权威源：CSS 变量以 `web/src/styles/globals.css` 为唯一权威；TS 侧常量在 `web/src/lib/design/`（`palette.ts` / `z-layers.ts` / `modal.ts`），由 `token-guard` 测试保证同值。本文只做速查，不抄全部 hex。
 
 ## 表面谱系（L0–L3）
 

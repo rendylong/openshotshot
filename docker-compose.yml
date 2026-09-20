@@ -1,6 +1,6 @@
 services:
-  app:
-    image: ghcr.io/rendylong/shotshot:latest
+  shotshot:
+    build: .
     container_name: shotshot
     ports:
       - "3000:3000"

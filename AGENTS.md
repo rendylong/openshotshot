@@ -4,25 +4,10 @@
 
 ## 项目基线
 
-- 对外品牌统一使用 **shotshot.ai**，产品名与技术命名空间统一使用 `shotshot`；不得新增其他品牌名、旧命名空间或兼容别名。
+- 开源项目名与对外名称统一使用 **OpenShotShot**，产品名与技术命名空间统一使用 `shotshot`；仓库地址为 `https://github.com/rendylong/openshotshot`（代码内以 `REPO_URL` 常量为准）。不得新增其他品牌名、旧域名或旧仓库地址。
 - 项目是本地优先的 AI 视觉创作工作台，包含可独立运行的 Web 渲染端和 Electron 桌面端。
 - 当前主要技术栈：Vite、React、React Router、TypeScript、Tailwind CSS、shadcn/Radix、Ant Design、Zustand、TanStack Query、assistant-ui、aicss.dev、Electron、electron-vite 和 Pi Agent。
 - `web/` 是渲染进程与独立 Web 应用；`electron/` 是桌面主进程、preload、Pi Agent 宿主、本地 Skill 与文件系统能力。不要再假设项目只有浏览器前端，也不要假设存在远程业务后端。
-
-## shotshot 平台仓库与托管链路
-
-本仓库（realicanvas）是 shotshot 桌面/渲染端；服务端拆分在独立仓库中（本机均在 `/Users/apple/` 下），职责边界以 `shotshot_cloud/docs/architecture.md` 为基线：
-
-- `shotshot_cloud`（部署于 `https://api.shotshot.ai`）：终端用户与设备会话、Paddle 订阅、权益、credits、商业用量、网关授权协调；服务端托管模型目录与商业账本的唯一真值。
-- `key-mgmt`（one-api fork，文档中偶写作 `key_mgmt`，同一项目；部署于 `https://key-mgmt.shotshot.ai`）：模型网关，负责 Provider Key、模型路由、硬配额、原始请求计量与可执行价格目录（`service/shotshot_catalog.go`）；每次请求独立校验模型 ∈ 目录 + 价格版本，客户端不是唯一防线。
-- `op_shotshot`：仅管理员可见的控制面（管理员身份、运营界面、受控管理操作、审计）；套餐与托管模型目录配置（`/plans` → `plan_catalog.features->'managed_models'`）在这里维护。它不是桌面用户 API。
-- `web_shotshot`（部署于 `https://shotshot.ai`）：网站登录、套餐与账户页面，兼作桌面授权在系统浏览器中的续接页。
-
-- 账户链：桌面端发起 → 系统浏览器在 web_shotshot 完成 Google 登录 → shotshot_cloud 签发桌面会话与设备 token，并按服务端套餐推导模型白名单向 key-mgmt 配置设备级网关凭证；客户端上报的 `models[]` 会被拒绝。
-- 生成链：`credentialMode=shotshot` 时 Electron main 持网关凭证直达 key-mgmt，响应不经 shotshot_cloud 代理；套餐权益与计费在 shotshot_cloud，配额与计量在 key-mgmt。
-- 托管目录语义：云端 `GET /v1/models` = 套餐成员 ∩ key-mgmt 可执行价格目录，拉不到 key-mgmt 目录时 fail-closed 返回空；客户端 `managedModels` 只是用户偏好缓存，不是真值，为空或陈旧时必须走请求时解析层回退。
-- 边界禁令：桌面不得调用 op_shotshot 的任何接口或其 `gen-gateway`；op_shotshot 宕机不得影响登录、账户展示或托管执行。不得把套餐表、价格或扣费算法复制进桌面。
-- `credentialMode`（`byok` / `shotshot`，谁出凭据）与 `channelMode`（`local` / `remote`，怎么执行）是两个正交轴，不得合并或互相重解释。
 
 ## 基本原则
 
@@ -94,11 +79,9 @@
 
 ## 文档规范
 
-- README 保持简洁，只放项目介绍、核心功能、快速开始和文档入口；对外统一使用 shotshot.ai 品牌。
-- `docs/index.md` 和 `docs/index.zh-CN.md` 是 AI 使用的文档索引，不放进 `docs/content/docs/`。
-- 详细功能、待办和待测试内容分别维护在 `docs/content/docs/overview/features*.mdx`、`progress/todo*.mdx`、`progress/pending-test*.mdx`。
-- 修改双语文档时同步维护英文与 `*.zh-CN.mdx` 版本；不要让导航、能力状态或安全说明只更新一个语言。
-- 已实现但尚待用户确认的功能先进入 `pending-test`；确认后再更新正式功能说明。`CHANGELOG.md` 的 `Unreleased` 只保留版本级摘要，不复制实现清单。
+- README 保持简洁，只放项目介绍、核心功能、快速开始、BYOK 说明、重要提示与开源致谢；对外统一使用 OpenShotShot / shotshot 品牌。
+- 详细功能说明以 README 与代码内注释为准，不在仓库内另建文档站。
+- `CHANGELOG.md` 的 `Unreleased` 只保留版本级摘要，不复制实现清单。
 - 用户可感知的功能、接口或工具变化在 `CHANGELOG.md` 的 `Unreleased` 中用 `[新增]`、`[调整]`、`[修复]` 或 `[优化]` 归纳；纯内部重构或文档整理不需要记录。
 - 文档不写会快速过期的日期，除非用户明确要求。
 
