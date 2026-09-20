@@ -7,8 +7,6 @@ import { join, resolve } from "node:path";
 import type { MainFetchError, MainFetchRequest } from "@/lib/agent/pi-agent-types";
 import { FETCH_CHANNEL, FETCH_ABORT_CHANNEL, registerAgentHost } from "./agent-host";
 import { AGENT_SESSIONS_DIR, APP_SKILLS_DIR } from "./app-data-paths";
-import { createAppReleaseController } from "./app-release-controller";
-import { registerAppReleaseIpc } from "./app-release-ipc";
 import { createFetchRequestRegistry } from "./fetch-proxy";
 import { registerProjectAssetIpc } from "./project-asset-ipc";
 import { createProjectAssetStore, type ProjectAssetStore } from "./project-asset-store";
@@ -29,8 +27,6 @@ const externalOrigins = new Set(["https://github.com"]);
 
 let mainWindow: BrowserWindow | null = null;
 let disposeProjectAssetIpc: (() => void) | null = null;
-let disposeAppReleaseIpc: (() => void) | null = null;
-let appReleaseController: ReturnType<typeof createAppReleaseController> | null = null;
 let projectAssetStore: ProjectAssetStore | null = null;
 let libraryAssetStore: LibraryAssetStore | null = null;
 let disposeLibraryAssetIpc: (() => void) | null = null;
@@ -186,20 +182,6 @@ function startPrimaryInstance() {
 
         createWindow();
 
-        appReleaseController = createAppReleaseController({
-            baseUrl: "https://api.shotshot.ai",
-            localVersion: app.getVersion(),
-            packaged: app.isPackaged,
-            openExternal: (url) => shell.openExternal(url),
-        });
-        disposeAppReleaseIpc = registerAppReleaseIpc({
-            ipcMain,
-            controller: appReleaseController,
-            isTrustedSender: (sender) => isTrustedTaskCountSender(sender, appWindows),
-            recipients: () => [...appWindows.values()].map((win) => win.webContents),
-        });
-        void appReleaseController.start();
-
         app.on("activate", () => {
             if (BrowserWindow.getAllWindows().length === 0) createWindow();
         });
@@ -223,10 +205,6 @@ function startPrimaryInstance() {
         disposeLibraryAssetIpc?.();
         disposeLibraryAssetIpc = null;
         void libraryAssetStore?.close();
-        disposeAppReleaseIpc?.();
-        disposeAppReleaseIpc = null;
-        appReleaseController?.dispose();
-        appReleaseController = null;
         void projectAssetStore?.close();
         projectAssetStore = null;
     });

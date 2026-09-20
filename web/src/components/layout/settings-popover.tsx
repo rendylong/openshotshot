@@ -1,11 +1,10 @@
 import { useRef, useState } from "react";
 import { Popover } from "antd";
-import { BookOpen, History, Languages, Moon, Settings2, Sun } from "lucide-react";
+import { BookOpen, Languages, Moon, Settings2, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { DOCS_URL } from "@/constant/env";
 import { changeAppLocale, type AppLocale } from "@/i18n";
-import { useAppReleaseStore } from "@/stores/use-app-release-store";
 import { useConfigStore } from "@/stores/use-config-store";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { cn } from "@/lib/utils";
@@ -18,9 +17,6 @@ export function SettingsPopover({ onOpenChange, collapsed = false }: { onOpenCha
     const theme = useThemeStore((state) => state.theme);
     const setTheme = useThemeStore((state) => state.setTheme);
     const openConfigDialog = useConfigStore((state) => state.openConfigDialog);
-    const releaseStatus = useAppReleaseStore((state) => state.state.status);
-    const setReleaseModalOpen = useAppReleaseStore((state) => state.setReleaseModalOpen);
-    const hasNewVersion = releaseStatus === "soft_update" || releaseStatus === "force_update";
     const locale = i18n.resolvedLanguage as AppLocale;
     const nextLocale = locale === "zh-CN" ? "en-US" : "zh-CN";
 
@@ -44,18 +40,6 @@ export function SettingsPopover({ onOpenChange, collapsed = false }: { onOpenCha
             >
                 <Settings2 className="size-4" />
                 {t("sidebar.settings.config")}
-            </button>
-            <button
-                type="button"
-                className={itemClass}
-                onClick={() => {
-                    setReleaseModalOpen(true);
-                    close();
-                }}
-            >
-                <History className="size-4" />
-                {t("sidebar.settings.updates")}
-                {hasNewVersion ? <span className="ml-1 size-1.5 rounded-full bg-green-500" aria-hidden="true" /> : null}
             </button>
             <button
                 type="button"

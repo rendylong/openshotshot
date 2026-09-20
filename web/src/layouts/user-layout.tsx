@@ -3,11 +3,8 @@ import { useLocation } from "react-router-dom";
 
 import { AgentPanel } from "@/components/agent/agent-panel";
 import { AppConfigModal } from "@/components/layout/app-config-modal";
-import { AppReleaseForceModal } from "@/components/layout/app-release-force-modal";
-import { AppReleaseRuntime } from "@/components/layout/app-release-runtime";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { useConfigStore, type ChatPanelSide } from "@/stores/use-config-store";
-import { VersionReleaseModal } from "@/components/layout/version-release-modal";
 
 /**
  * The panel slot sits between the sidebar and the canvas in DOM order. Every
@@ -87,7 +84,6 @@ export default function UserLayout({ children }: { children: ReactNode }) {
 
     return (
         <div className="relative flex h-dvh overflow-hidden bg-background text-foreground">
-            <AppReleaseRuntime />
             {isMacDesktop ? <div className="native-titlebar-drag-region" aria-hidden="true" /> : null}
             <AppSidebar />
             {isAgentSurface ? (
@@ -99,8 +95,6 @@ export default function UserLayout({ children }: { children: ReactNode }) {
                 {children}
             </div>
             <AppConfigModal />
-            <AppReleaseForceModal />
-            <VersionReleaseModal />
         </div>
     );
 }

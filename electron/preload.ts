@@ -6,7 +6,6 @@ import type { SkillsBridge } from "@/lib/skills/skill-types";
 import type { TaskLifecycleBridge } from "@/lib/desktop/task-lifecycle-types";
 import { PROJECT_ASSET_CHANNELS, type ProjectAssetChangedEvent, type ProjectAssetsBridge } from "@/lib/project-assets/project-asset-types";
 import { LIBRARY_ASSET_CHANNELS, type LibraryAssetChangedEvent, type LibraryAssetsBridge } from "@/lib/library-assets/library-asset-types";
-import { createAppReleaseBridge, type AppReleaseBridge } from "@/lib/desktop/app-release-bridge";
 import { createCanvasImageReaderSlot } from "./agent-canvas-image";
 
 const CH = {
@@ -223,7 +222,5 @@ const chatgpt: ChatGptBridge = {
     },
 };
 
-const appRelease: AppReleaseBridge = createAppReleaseBridge(ipcRenderer);
 contextBridge.exposeInMainWorld("shotshot", {
-    appRelease,
     chatgpt, agent: bridge, skills: skillsBridge, agentMemory: agentMemoryBridge, tasks: taskLifecycleBridge, projectAssets: projectAssetsBridge, libraryAssets: libraryAssetsBridge, platform: process.platform });

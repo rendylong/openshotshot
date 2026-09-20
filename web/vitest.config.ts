@@ -12,7 +12,6 @@ export default defineConfig({
     },
     define: {
         __APP_VERSION__: JSON.stringify("dev"),
-        __APP_RELEASES__: JSON.stringify([]),
     },
     test: {
         environment: "jsdom",

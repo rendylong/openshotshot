@@ -6,7 +6,6 @@ import type { MenuProps } from "antd";
 import { Ellipsis, FolderInput, FolderKanban, Frame, PanelLeftClose, PanelLeftOpen, Plus, Sparkles, Trash2 } from "lucide-react";
 
 import { ProjectIconBadge } from "@/components/canvas/project-icon-badge";
-import { AppReleaseIndicator } from "@/components/layout/app-release-indicator";
 import { SettingsPopover } from "@/components/layout/settings-popover";
 import { Spinner } from "@/components/ui/spinner";
 import { UNCATEGORIZED_PROJECT_ID } from "@/lib/canvas/category";
@@ -139,14 +138,13 @@ export function AppSidebar() {
                 )}
             </nav>
 
-            {/* 右上角「新版本」提醒 + 折叠/钉住按钮：与 macOS 红绿灯同行（用户指定位置），no-drag 保证可点击。
+            {/* 折叠/钉住按钮：与 macOS 红绿灯同行（用户指定位置），no-drag 保证可点击。
                 放在 nav 之后以盖过同 z-50 的品牌行；折叠态整体隐藏，避免在 56px 宽度下与红绿灯打架。
                 折叠态靠悬停展开，钉住需先悬停再点本按钮。
                 p-2 -m-2 把 no-drag 热区扩到窗口角落（顶到 y=0、贴齐右缘），接近路径落在热区内，
                 不必穿越标题栏 28px 拖拽死区；视觉位置不变。 */}
             {!effectiveCollapsed && (
                 <div className="native-titlebar-no-drag absolute right-2 top-2 z-50 -m-2 flex items-center gap-1 p-2">
-                    <AppReleaseIndicator className="native-titlebar-no-drag cursor-pointer text-xs font-medium text-stone-500 transition hover:text-stone-950 dark:text-stone-400 dark:hover:text-white" />
                     <button
                         type="button"
                         onClick={() => {

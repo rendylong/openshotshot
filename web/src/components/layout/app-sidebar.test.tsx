@@ -42,18 +42,6 @@ vi.mock("antd", () => ({
             ) : null}
         </span>
     ),
-    // 底栏 VersionReleaseModal 依赖的 antd 组件最小桩，仅保证测试渲染不炸
-    Modal: ({ open, title, footer, onCancel, children }: { open?: boolean; title?: React.ReactNode; footer?: React.ReactNode; onCancel?: () => void; children?: React.ReactNode }) =>
-        open ? (
-            <div data-testid="version-release-modal">
-                {title}
-                {children}
-                {footer}
-                <button type="button" onClick={() => onCancel?.()} />
-            </div>
-        ) : null,
-    Tag: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
-    Timeline: ({ items }: { items?: { content: React.ReactNode }[] }) => <div>{(items ?? []).map((item, index) => <div key={index}>{item.content}</div>)}</div>,
 }));
 
 vi.mock("@/components/layout/settings-popover", () => ({

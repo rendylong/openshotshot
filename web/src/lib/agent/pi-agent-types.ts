@@ -314,7 +314,6 @@ export type AgentMemoryBridge = {
 declare global {
     interface Window {
         shotshot?: {
-            appRelease?: import("../desktop/app-release-bridge").AppReleaseBridge;
             chatgpt?: ChatGptBridge;
             agent: AgentBridge;
             skills: SkillsBridge;
