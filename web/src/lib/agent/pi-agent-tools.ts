@@ -1542,7 +1542,7 @@ export function buildCanvasTools(context: CanvasToolContext): CanvasAgentTool[] 
         // === models_list ===
         {
             name: "models_list",
-            description: '列出当前凭据模式实际可执行的生成模型（text/image/video/audio）：BYOK 返回 channelId::modelName，ShotShot 托管模式返回套餐目录 id。生成工具的 model 参数必须逐字传递本工具返回的 id，不要自造模型字符串。图片模型的 inputMode 表示 text（文生图）、image（必须有参考图）、text-and-image（参考图可选）或 unknown；requiresReference=true 时必须传 referenceNodeIds。isDefault=true 表示该能力当前默认模型。AutoDL 工作流的 vquality 需使用其合法枚举（如「768p横」）。',
+            description: '列出当前配置实际可执行的生成模型（text/image/video/audio），模型 id 为 channelId::modelName（渠道 id 与模型名以 :: 连接）。生成工具的 model 参数必须逐字传递本工具返回的 id，不要自造模型字符串。图片模型的 inputMode 表示 text（文生图）、image（必须有参考图）、text-and-image（参考图可选）或 unknown；requiresReference=true 时必须传 referenceNodeIds。isDefault=true 表示该能力当前默认模型。AutoDL 工作流的 vquality 需使用其合法枚举（如「768p横」）。',
             label: "列出可用模型",
             promptSnippet: "需要指定 model 时先调用；model 参数逐字传递返回的 id。",
             parameters: Type.Object({
