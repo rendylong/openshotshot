@@ -21,10 +21,6 @@ export const DEFAULT_REMOTE_TASK_TIMEOUT_MINUTES = 5;
 export const DEFAULT_VIDEO_TASK_TIMEOUT_MINUTES = 30;
 export type RemoteTaskConfig = { timeoutMinutes: number; submitScript: string; queryScript: string };
 export type ChatPanelSide = "left" | "right";
-export type CredentialMode = "byok" | "shotshot";
-export type ManagedModelSelections = Record<ModelCapability, string>;
-export type CredentialModeKey = ModelCapability | "agent";
-export type CredentialModeSelections = Record<CredentialModeKey, CredentialMode>;
 
 export type ChannelModel = {
     name: string;
@@ -50,10 +46,6 @@ export type ModelChannel = {
 };
 
 export type AiConfig = {
-    credentialMode: CredentialMode;
-    /** Per-capability source overrides. `credentialMode` remains the legacy default. */
-    credentialModes: CredentialModeSelections;
-    managedModels: ManagedModelSelections;
     channelMode: "remote" | "local";
     baseUrl: string;
     apiKey: string;
@@ -64,8 +56,6 @@ export type AiConfig = {
     videoModel: string;
     textModel: string;
     agentModel: string;
-    /** shotshot 模式下 Agent 使用的套餐文本模型 id；空表示用目录第一个 text 模型。 */
-    managedAgentModel: string;
     agentApiMode: AgentApiMode;
     audioModel: string;
     audioVoice: string;
@@ -218,9 +208,6 @@ const OFFICIAL_CHANNEL_PRESETS: Record<Exclude<ChannelProvider, "custom">, { nam
 };
 
 export const defaultConfig: AiConfig = {
-    credentialMode: "byok",
-    credentialModes: { agent: "byok", image: "byok", video: "byok", text: "byok", audio: "byok" },
-    managedModels: { text: "", image: "", video: "", audio: "" },
     channelMode: "local",
     baseUrl: OPENAI_BASE_URL,
     apiKey: "",
@@ -246,7 +233,6 @@ export const defaultConfig: AiConfig = {
     videoModel: "default::grok-imagine-video",
     textModel: "default::gpt-5.5",
     agentModel: "default::gpt-5.5",
-    managedAgentModel: "",
     agentApiMode: "responses",
     audioModel: "default::gpt-4o-mini-tts",
     audioVoice: "alloy",
@@ -279,16 +265,18 @@ export const defaultWebdavSyncConfig: WebdavSyncConfig = {
     lastSyncedAt: "",
 };
 
-export function normalizeAiConfig(persistedConfig: Partial<AiConfig>): AiConfig {
+export function normalizeAiConfig(input: Partial<AiConfig>): AiConfig {
+    // 只接受当前 AiConfig 的键：旧持久化里已删除概念（托管/凭证模式家族）的遗留键静默丢弃，不抛错。
+    const persistedConfig: Partial<AiConfig> = {};
+    for (const [key, value] of Object.entries(input)) {
+        if (key in defaultConfig) (persistedConfig as Record<string, unknown>)[key] = value;
+    }
     const config = { ...defaultConfig, ...persistedConfig };
     const agentModel = persistedConfig.agentModel || config.textModel || config.model;
     if (!Array.isArray(persistedConfig.channels)) config.channels = [];
     const channels = normalizeChannels(config);
     return {
         ...config,
-        credentialMode: normalizeCredentialMode(config.credentialMode),
-        credentialModes: normalizeCredentialModeSelections(persistedConfig.credentialModes, config.credentialMode, config.managedModels),
-        managedModels: normalizeManagedModelSelections(config.managedModels),
         channelMode: config.channelMode === "remote" ? "remote" : "local",
         apiFormat: normalizeApiFormat(config.apiFormat),
         channels,
@@ -591,41 +579,6 @@ function normalizeAgentApiMode(value: unknown): AgentApiMode {
 
 export function normalizeChatPanelSide(value: unknown): ChatPanelSide {
     return value === "left" ? "left" : "right";
-}
-
-export function normalizeCredentialMode(
-    value: unknown,
-    desktop = Boolean((globalThis as { window?: { shotshot?: { account?: unknown } } }).window?.shotshot?.account),
-): CredentialMode {
-    return value === "shotshot" && desktop ? "shotshot" : "byok";
-}
-
-export function normalizeCredentialModeSelections(value: unknown, fallback: unknown, managedModels?: unknown): CredentialModeSelections {
-    const source = value && typeof value === "object" ? value as Partial<CredentialModeSelections> : {};
-    const legacy = normalizeCredentialMode(fallback);
-    const configuredManaged = managedModels && typeof managedModels === "object" ? managedModels as Partial<ManagedModelSelections> : {};
-    const mode = (key: CredentialModeKey): CredentialMode => {
-        if (source[key] === "shotshot" || source[key] === "byok") return source[key];
-        if (legacy === "shotshot" && key !== "agent") return typeof configuredManaged[key] === "string" && Boolean(configuredManaged[key]?.trim()) ? "shotshot" : "byok";
-        if (legacy === "shotshot" && key === "agent") return typeof configuredManaged.text === "string" && Boolean(configuredManaged.text.trim()) ? "shotshot" : "byok";
-        return legacy;
-    };
-    return { agent: mode("agent"), image: mode("image"), video: mode("video"), text: mode("text"), audio: mode("audio") };
-}
-
-export function credentialModeFor(config: Pick<AiConfig, "credentialMode" | "credentialModes">, key: CredentialModeKey): CredentialMode {
-    // 托管模式已删除：恒返回 byok（stub，Task 7 随类型一起移除）。
-    return "byok";
-}
-
-export function normalizeManagedModelSelections(value: unknown): ManagedModelSelections {
-    const selections = value && typeof value === "object" ? value as Partial<ManagedModelSelections> : {};
-    return {
-        text: typeof selections.text === "string" ? selections.text : "",
-        image: typeof selections.image === "string" ? selections.image : "",
-        video: typeof selections.video === "string" ? selections.video : "",
-        audio: typeof selections.audio === "string" ? selections.audio : "",
-    };
 }
 
 function normalizeChannelProvider(value: unknown): ChannelProvider {

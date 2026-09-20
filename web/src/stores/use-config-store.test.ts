@@ -5,7 +5,7 @@ const { saveAs } = vi.hoisted(() => ({ saveAs: vi.fn() }));
 vi.mock("file-saver", () => ({ saveAs }));
 
 import { exportAppConfig, importAppConfig } from "@/services/config-file";
-import { CONFIG_STORE_KEY, modelOptionLabel, createModelChannel, credentialModeFor, defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, normalizeAiConfig, normalizeChannelModels, resolveModelExecution, useConfigStore } from "@/stores/use-config-store";
+import { CONFIG_STORE_KEY, modelOptionLabel, createModelChannel, defaultConfig, defaultWebdavSyncConfig, encodeChannelModel, normalizeAiConfig, normalizeChannelModels, resolveModelExecution, useConfigStore, type AiConfig } from "@/stores/use-config-store";
 
 const initialState = useConfigStore.getState();
 
@@ -16,53 +16,15 @@ afterEach(() => {
 });
 
 describe("model execution configuration", () => {
-    test("defaults legacy configuration to BYOK and preserves both execution axes", () => {
-        const legacy = { ...defaultConfig, channelMode: "remote" as const } as Partial<typeof defaultConfig>;
-        delete legacy.credentialMode;
-        delete legacy.managedModels;
-        expect(normalizeAiConfig(legacy)).toMatchObject({
-            credentialMode: "byok",
-            channelMode: "remote",
-            managedModels: { text: "", image: "", video: "", audio: "" },
-        });
+    test("drops legacy credentialMode keys from persisted config without throwing", () => {
+        const legacy = { ...defaultConfig, credentialMode: "shotshot", credentialModes: { agent: "shotshot" }, managedModels: { image: "x" }, managedAgentModel: "managed-text" } as Partial<AiConfig>;
+        const normalized = normalizeAiConfig(legacy);
+        expect("credentialMode" in normalized).toBe(false);
+        expect("credentialModes" in normalized).toBe(false);
+        expect("managedModels" in normalized).toBe(false);
+        expect("managedAgentModel" in normalized).toBe(false);
     });
 
-    test("preserves BYOK channels and selections while managed selections are normalized separately", () => {
-        const config = normalizeAiConfig({
-            ...defaultConfig,
-            channels: defaultConfig.channels.map((channel) => ({ ...channel, apiKey: "kept-byok-key" })),
-            credentialMode: "shotshot",
-            managedModels: { text: "managed-text", image: "managed-image", video: "managed-video", audio: "managed-audio" },
-        });
-        expect(config.channels[0].apiKey).toBe("kept-byok-key");
-        expect(config.imageModel).toBe(defaultConfig.imageModel);
-        expect(config.managedModels).toEqual({ text: "managed-text", image: "managed-image", video: "managed-video", audio: "managed-audio" });
-    });
-
-    test("migrates an old managed config with no text model to managed video plus BYOK text", () => {
-        window.shotshot = { account: {} } as never;
-        const config = normalizeAiConfig({
-            ...defaultConfig,
-            credentialMode: "shotshot",
-            managedModels: { text: "", image: "", video: "managed-video", audio: "" },
-            credentialModes: undefined,
-        });
-        expect(config.credentialModes).toEqual({ agent: "byok", text: "byok", image: "byok", video: "shotshot", audio: "byok" });
-        delete window.shotshot;
-    });
-    test("respects an explicit all-BYOK demotion instead of the legacy shotshot override", () => {
-        window.shotshot = { account: {} } as never;
-        const config = normalizeAiConfig({
-            ...defaultConfig,
-            credentialMode: "shotshot",
-            managedModels: { text: "", image: "", video: "", audio: "" },
-            credentialModes: undefined,
-        });
-        delete window.shotshot;
-        expect(config.credentialModes).toEqual({ agent: "byok", text: "byok", image: "byok", video: "byok", audio: "byok" });
-        expect(credentialModeFor(config, "agent")).toBe("byok");
-        expect(credentialModeFor(config, "video")).toBe("byok");
-    });
     test("keeps script-free models free of generated execution configuration", () => {
         const model = normalizeChannelModels([{ name: "image-x", capability: "image" }])[0];
         expect(model).toEqual({ name: "image-x", capability: "image" });

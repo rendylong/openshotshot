@@ -26,8 +26,6 @@ describe("config file migration", () => {
         await importAppConfig(file);
 
         expect(useConfigStore.getState().config).toMatchObject({
-            credentialMode: "byok",
-            managedModels: { text: "", image: "", video: "", audio: "" },
             agentModel: defaultConfig.textModel,
             agentApiMode: "responses",
         });

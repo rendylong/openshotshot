@@ -29,7 +29,7 @@ it("accepts OpenRouter and binds every destination and protocol field in the pro
     expect(models[0].api).toBe("openai-completions");
 });
 
-test("byok configs reject stale credential modes and unknown sources", () => {
-    expect(() => parseAgentModelConfig({ credentialMode: "shotshot", model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true })).toThrow("invalid_agent_model_config");
+test("byok configs reject incomplete payloads and unknown sources", () => {
+    expect(() => parseAgentModelConfig({ model: "minimax-m3", apiFormat: "openai", agentApiMode: "chat_completions", supportsImageInput: true })).toThrow("invalid_agent_model_config");
     expect(() => parseAgentModelConfig({ source: "platform", model: "gpt" })).toThrow("invalid_agent_model_config");
 });

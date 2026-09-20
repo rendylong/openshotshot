@@ -29,7 +29,7 @@ export function remoteTaskTerminalText(task: CanvasRemoteTaskMetadata | undefine
     return "";
 }
 
-// key-mgmt release 路径的 error_code（model/shotshot_media_task.go:44-46）；
+// 远端任务返回的 error_code 对应文案（上游 shotshot_media_task.go:44-46）；
 // 未列出的码原样透出，优于 generic 文案。
 const REMOTE_TASK_ERROR_CODE_I18N: Record<string, string> = {
     upstream_failed: "canvas.remoteTask.errorUpstreamFailed",

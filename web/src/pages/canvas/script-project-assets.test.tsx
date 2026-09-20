@@ -387,7 +387,7 @@ describe("script project asset attribution", () => {
     });
 
     it("carries video lineage through the remote_task adapter channel into the project asset source", async () => {
-        // 旗舰链路（credentialMode=shotshot 视频恒为 remote_task）：真实路由规划器 + 真实任务记录 + 真实交付。
+        // 远端任务链路（视频恒走 remote_task 适配器）：真实路由规划器 + 真实任务记录 + 真实交付。
         routeOverride.forceDirect = false;
         useRemoteChannelConfig();
         submitAdapterRemoteMediaTask.mockResolvedValue({ taskId: "remote-video-1" });
