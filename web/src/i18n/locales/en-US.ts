@@ -820,7 +820,7 @@ const enUS = {
         description: "Account, model credentials, sync, and local storage",
         modalDescription: "Account, model credentials, default models, sync, and local storage",
         tabs: {
-            account: "Account",
+            aiSources: "AI Connections",
             channels: "Providers",
             preferences: "Preferences",
             localStorage: "Local storage",
