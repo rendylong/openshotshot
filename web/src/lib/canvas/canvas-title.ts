@@ -11,7 +11,8 @@ export function canvasTitleFromPrompt(text: string, fallback = ""): string {
 }
 
 // 用画布文本模型为首次发问生成简短标题；失败返回 null，由调用方回退到原文截断。
-// 托管凭据模式走网关一次性文本问答，BYOK 走原 requestImageQuestion。
+// 仅支持 BYOK 渠道：经 requestAgentTextCompletion 走一次性文本问答，
+// 其余来源由其抛出 AgentTitleUnsupportedSourceError 触发回退。
 export async function generateCanvasTitle(question: string, signal?: AbortSignal): Promise<string | null> {
     const text = question.trim();
     if (!text) return null;

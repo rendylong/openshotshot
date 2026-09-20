@@ -23,6 +23,9 @@ jobs:
       - run: npm run build
   desktop:
     runs-on: ubuntu-latest
+    env:
+      # 跳过 electron 二进制下载：npm ci 的 postinstall 与 electron-vite build 均不需要（已验证构建不依赖二进制）
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,6 +37,3 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx vitest run
       - run: npx electron-vite build
-        env:
-          # electron 下载走国内镜像时才需要；默认官方源即可
-          ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
