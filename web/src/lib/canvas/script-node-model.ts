@@ -1,3 +1,6 @@
+/// <reference lib="dom" />
+// 该模块被 electron 侧（pi-agent-tools → agent-prompt-delivery.test）经 @/ 别名引入根 tsconfig 程序，
+// 根程序 lib 仅 ES2022；htmlToRich 的 contenteditable DOM 遍历按文件级引入 lib.dom（不改变运行时行为）。
 import { nanoid } from "nanoid";
 import type { ScriptImageGenParams, ScriptNodeData, ScriptOutputStatus, ScriptRichSegment, ScriptShot, ShotAudioRef, ShotAudioSlot, ShotVideoVersion, ScriptVideoGenParams } from "@/types/script-node";
 import type { ScriptEntity } from "@/stores/use-script-entity-store";

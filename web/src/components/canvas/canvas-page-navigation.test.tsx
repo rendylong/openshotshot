@@ -3,6 +3,12 @@ import { I18nextProvider } from "react-i18next";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { describe, expect, test, vi } from "vitest";
 
+// CanvasTopBar 仅在 Electron 桥存在时渲染 Agent 按钮（模块加载期判定 AGENT_BRIDGE_AVAILABLE）。
+// vi.hoisted 在被测组件导入前执行，为 jsdom 环境补上桥桩，保持测试「顶栏图标按钮」的断言语境。
+vi.hoisted(() => {
+    (window as { shotshot?: unknown }).shotshot = { agent: {} };
+});
+
 import { CanvasListView } from "@/components/canvas/canvas-list-view";
 import { CanvasTopBar } from "@/components/canvas/canvas-top-bar";
 import { CanvasZoomControls } from "@/components/canvas/canvas-zoom-controls";

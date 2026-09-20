@@ -130,36 +130,3 @@ describe("ModelPicker 改版（D18-D20）", () => {
     });
 });
 
-describe("ModelPicker extraOnly mode", () => {
-    const options = [
-        { value: "shotshot-image-pro", label: "ShotShot Image Pro" },
-        { value: "shotshot-image-lite", label: "ShotShot Image Lite" },
-    ];
-
-    function pick(props: Partial<React.ComponentProps<typeof ModelPicker>> = {}) {
-        return render(
-            <I18nextProvider i18n={i18n}>
-                <QueryClientProvider client={new QueryClient()}><AntApp>
-                    <ModelPicker config={defaultConfig} value="shotshot-image-pro" currentLabel="ShotShot Image Pro" capability="image" extraOnly extraOptionsHeader="套餐内图片模型（2）" extraOptions={options} onChange={vi.fn()} {...props} />
-                </AntApp></QueryClientProvider>
-            </I18nextProvider>,
-        );
-    }
-
-    test("lists only managed catalog options under the header", async () => {
-        pick();
-        // antd Popover trigger="click" 只监听 onClick（pointerDown 仅适用于 Radix DropdownMenu）
-        fireEvent.click(screen.getByText("ShotShot Image Pro"), { button: 0 });
-        expect(await screen.findByText("套餐内图片模型（2）")).toBeInTheDocument();
-        expect(screen.getByText("ShotShot Image Lite")).toBeInTheDocument();
-        expect(screen.queryByText("渠道与模型设置")).not.toBeInTheDocument();
-    });
-
-    test("commits the picked managed model id", async () => {
-        const onChange = vi.fn();
-        pick({ onChange });
-        fireEvent.click(screen.getByText("ShotShot Image Pro"), { button: 0 });
-        fireEvent.click(await screen.findByText("ShotShot Image Lite"));
-        expect(onChange).toHaveBeenCalledWith("shotshot-image-lite");
-    });
-});

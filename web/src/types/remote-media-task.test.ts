@@ -68,7 +68,7 @@ describe("persisted managed recovery intent", () => {
 });
 
 
-test.each(["queued", "running", "delivering", "settling", "downloading", "saving"])("retains optional delivery phase %s and accepts old records", phase => {
+test.each(["queued", "running", "delivering", "downloading", "saving"])("retains optional delivery phase %s and accepts old records", phase => {
     expect(isRemoteMediaTask(JSON.parse(JSON.stringify(validTask({ phase }))))).toBe(true);
     expect(isRemoteMediaTask(validTask())).toBe(true);
     expect(isRemoteMediaTask(validTask({ phase: "unknown" }))).toBe(false);

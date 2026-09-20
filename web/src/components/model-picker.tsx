@@ -45,9 +45,6 @@ type ModelPickerProps = {
     fullWidth?: boolean;
     placeholder?: string;
     onMissingConfig?: () => void;
-    /** 只渲染 extraOptions（托管目录选择），不列出 BYOK 渠道模型。 */
-    extraOnly?: boolean;
-    extraOptionsHeader?: string;
 };
 
 const capabilityDefaultKey: Record<ModelCapability, keyof AiConfig> = { image: "imageModel", video: "videoModel", audio: "audioModel", text: "textModel" };
@@ -82,7 +79,7 @@ function ModelIcon({ model }: { model: string }) {
     return Icon ? <Icon size={14} /> : <Cpu className="size-4 shrink-0 opacity-70" />;
 }
 
-export function ModelPicker({ config, value, onChange, capability, purpose = "generation", className, fullWidth = false, placeholder, onMissingConfig, extraOptions = [], currentLabel, disabled, extraOnly = false, extraOptionsHeader }: ModelPickerProps) {
+export function ModelPicker({ config, value, onChange, capability, purpose = "generation", className, fullWidth = false, placeholder, onMissingConfig, extraOptions = [], currentLabel, disabled }: ModelPickerProps) {
     const { t } = useTranslation();
     const pickerId = useId();
     const [open, setOpen] = useState(false);
@@ -109,7 +106,6 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
     }, [pickerId]);
 
     const groups = useMemo(() => {
-        if (extraOnly) return [] as Array<[string, string[]]>;
         const map = new Map<string, string[]>();
         for (const model of options) {
             const name = resolveModelChannel(config, model)?.name || i18n.t("config.channels.defaultName");
@@ -118,7 +114,7 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
             map.set(name, bucket);
         }
         return Array.from(map.entries());
-    }, [extraOnly, options, config]);
+    }, [options, config]);
 
     const visibleGroups = groups
         .map(([name, models]) => [name, models.filter((model) => model.toLowerCase().includes(query.toLowerCase()) || name.toLowerCase().includes(query.toLowerCase()))] as const)
@@ -132,7 +128,7 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
             // 视觉在上层但点击全被弹窗拦截；落进弹窗内容子树（pointer-events:auto 区域）才能交互。
             getPopupContainer={(node) => (node.closest('[data-slot="dialog-content"]') as HTMLElement | null) ?? document.body}
             onOpenChange={(next) => {
-                if (next && !extraOnly && !options.length && !extraOptions.length && config.channelMode === "local") onMissingConfig?.();
+                if (next && !options.length && !extraOptions.length && config.channelMode === "local") onMissingConfig?.();
                 if (next) window.dispatchEvent(new CustomEvent("model-picker-open", { detail: pickerId }));
                 setOpen(next);
             }}
@@ -156,8 +152,7 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
                         />
                     </div>
                     <div className="thin-scrollbar max-h-[60vh] overflow-y-auto">
-                        {!extraOnly && excludedAgentModels ? <div className="flex h-8 items-center gap-2 rounded-lg px-2 text-[12.5px] text-muted-foreground">{t("config.catalog.agentRequiresTools")}</div> : null}
-                        {extraOnly && extraOptionsHeader ? <div className="px-2 py-1 text-[11px] font-medium text-muted-foreground">{extraOptionsHeader}</div> : null}
+                        {excludedAgentModels ? <div className="flex h-8 items-center gap-2 rounded-lg px-2 text-[12.5px] text-muted-foreground">{t("config.catalog.agentRequiresTools")}</div> : null}
                         {extraOptions.map((option) => {
                             const isCurrentExtra = current === option.value;
                             return (
@@ -174,7 +169,7 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
                                 </button>
                             );
                         })}
-                        {!extraOnly && visibleGroups.map(([name, models]) => (
+                        {visibleGroups.map(([name, models]) => (
                             <div key={name} className="mb-1">
                                 <div className="px-2 py-1 text-[11px] font-medium text-muted-foreground">{name}</div>
                                 {models.map((model) => {
@@ -211,9 +206,9 @@ export function ModelPicker({ config, value, onChange, capability, purpose = "ge
                                 })}
                             </div>
                         ))}
-                        {!extraOnly && !visibleGroups.length ? <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t("settingsPanels.model.noMatch", { capability: capability ? t(`settingsPanels.model.capabilities.${capability}`) : "" })}</div> : null}
+                        {!visibleGroups.length ? <div className="px-2 py-3 text-center text-xs text-muted-foreground">{t("settingsPanels.model.noMatch", { capability: capability ? t(`settingsPanels.model.capabilities.${capability}`) : "" })}</div> : null}
                     </div>
-                    {!extraOnly && (
+                    {(
                         <button type="button" className="mt-1 flex h-8 w-full items-center gap-1.5 rounded-lg px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground" onClick={() => { setOpen(false); onMissingConfig?.(); }}>
                             <Settings className="size-3.5" />
                             {t("settingsPanels.model.manageProviders")}

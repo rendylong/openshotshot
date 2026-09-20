@@ -14,6 +14,13 @@ import { materializePendingAttachments } from "./register-pending-attachments";
 const storeCanvasImageMock = vi.mocked(storeCanvasImage);
 const storeCanvasMediaMock = vi.mocked(storeCanvasMedia);
 
+// 依赖漂移适配：vitest jsdom 环境里 fetch(dataUrl).blob() 返回 Node（undici）realm 的 Blob，
+// 与全局 jsdom Blob 不同 realm，expect.any(Blob) 的 instanceof 恒为假；改按 toStringTag 断言 Blob 语义。
+const anyBlob = {
+    asymmetricMatch: (actual: unknown) => Object.prototype.toString.call(actual) === "[object Blob]",
+    toString: () => "Any<Blob>",
+};
+
 const context: CanvasAssetWriteInput = {
     projectId: "project-1",
     projectTitle: "项目",
@@ -47,7 +54,7 @@ describe("materializePendingAttachments", () => {
 
         const [stored] = await materializePendingAttachments([attachment()], context);
 
-        expect(storeCanvasMediaMock).toHaveBeenCalledWith(expect.any(Blob), {
+        expect(storeCanvasMediaMock).toHaveBeenCalledWith(anyBlob, {
             ...context,
             name: "budget.xlsx",
             mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -69,7 +76,7 @@ describe("materializePendingAttachments", () => {
 
         const [stored] = await materializePendingAttachments([attachment({ id: "img", name: "photo.png", kind: "image", mimeType: "image/png", dataUrl: "data:image/png;base64,AA==", url: "data:image/png;base64,AA==" })], context);
 
-        expect(storeCanvasImageMock).toHaveBeenCalledWith(expect.any(Blob), expect.objectContaining({ projectId: "project-1", name: "photo.png" }));
+        expect(storeCanvasImageMock).toHaveBeenCalledWith(anyBlob, expect.objectContaining({ projectId: "project-1", name: "photo.png" }));
         expect(storeCanvasMediaMock).not.toHaveBeenCalled();
         expect(stored.relativePath).toBe("assets/imported/photo--a1b2c3d4.png");
     });

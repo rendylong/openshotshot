@@ -30,6 +30,13 @@ import { storeCanvasMedia } from "@/services/project-asset-storage";
 
 const storeCanvasMediaMock = vi.mocked(storeCanvasMedia);
 
+// 依赖漂移适配：vitest jsdom 环境里 fetch(dataUrl).blob() 返回 Node（undici）realm 的 Blob，
+// 与全局 jsdom Blob 不同 realm，expect.any(Blob) 的 instanceof 恒为假；改按 toStringTag 断言 Blob 语义。
+const anyBlob = {
+    asymmetricMatch: (actual: unknown) => Object.prototype.toString.call(actual) === "[object Blob]",
+    toString: () => "Any<Blob>",
+};
+
 const skillSnapshot: SkillRuntimeSnapshot = { revision: 1, skills: [], sources: [], diagnostics: [] };
 
 let sessionSeq = 0;
@@ -620,7 +627,7 @@ describe("PiAgentPanel attachment materialization", () => {
             files: [expect.objectContaining({ relativePath: "assets/imported/note--a1b2c3d4.txt", kind: "text", name: "note.txt" })],
             images: [],
         }));
-        expect(storeCanvasMediaMock).toHaveBeenCalledWith(expect.any(Blob), expect.objectContaining({
+        expect(storeCanvasMediaMock).toHaveBeenCalledWith(anyBlob, expect.objectContaining({
             projectId: "project-1",
             source: expect.objectContaining({ type: "agent-attachment", canvasId: "canvas-1" }),
         }));

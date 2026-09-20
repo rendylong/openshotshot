@@ -1,5 +1,5 @@
 export type AiCapability = "agent" | "image" | "video" | "text" | "audio";
-export type ManagedSelection = { source: "chatgpt" | "platform"; modelId: string };
+export type ManagedSelection = { source: "chatgpt"; modelId: string };
 export type AiSourcePreferences = { version: 1; selections: Partial<Record<AiCapability, ManagedSelection>> };
 export type ChatGptModel = { id: string; name: string; supportsImageInput: boolean };
 export type ChatGptPrompt = { id: string; type: "text" | "secret" | "select" | "manual_code"; options?: Array<{id: string; label: string}> };

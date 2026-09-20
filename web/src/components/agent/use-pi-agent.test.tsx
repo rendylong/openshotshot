@@ -23,6 +23,13 @@ vi.mock("./agent-chat", () => ({ AgentChatTimeline: () => null, AgentUsageBar: (
 
 const snapshot: SkillRuntimeSnapshot = { revision: 1, skills: [], sources: [], diagnostics: [] };
 
+// 依赖漂移适配：vitest jsdom 环境里 fetch(dataUrl).blob() 返回 Node（undici）realm 的 Blob，
+// 与全局 jsdom Blob 不同 realm，expect.any(Blob) 的 instanceof 恒为假；改按 toStringTag 断言 Blob 语义。
+const anyBlob = {
+    asymmetricMatch: (actual: unknown) => Object.prototype.toString.call(actual) === "[object Blob]",
+    toString: () => "Any<Blob>",
+};
+
 let sessionSeq = 0;
 
 vi.mock("@/services/image-storage", () => ({ uploadImage: vi.fn() }));
@@ -423,7 +430,7 @@ describe("usePiAgent turn activity", () => {
         await act(async () => { await Promise.resolve(); await Promise.resolve(); });
         await act(async () => { await result.current.sendPrompt("修改这个表格", [xlsxAttachment]); });
 
-        expect(storeCanvasMediaMock).toHaveBeenCalledWith(expect.any(Blob), expect.objectContaining({
+        expect(storeCanvasMediaMock).toHaveBeenCalledWith(anyBlob, expect.objectContaining({
             projectId: "project-1",
             source: expect.objectContaining({ type: "agent-attachment", canvasId: "canvas-1" }),
         }));
@@ -606,7 +613,7 @@ describe("usePiAgent turn activity", () => {
         fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter", code: "Enter" });
         await waitFor(() => expect(promptSpy).toHaveBeenCalledWith(useAgentSessionStore.getState().activeSessionId,
             expect.objectContaining({ text: "product visual", files: [expect.objectContaining({ relativePath: "assets/imported/bottle--a1b2c3d4.glb", kind: "glb" })], images: [] })));
-        expect(storeCanvasMediaMock).toHaveBeenLastCalledWith(expect.any(Blob), expect.objectContaining({ name: "bottle.glb", mimeType: pendingModel().mimeType }));
+        expect(storeCanvasMediaMock).toHaveBeenLastCalledWith(anyBlob, expect.objectContaining({ name: "bottle.glb", mimeType: pendingModel().mimeType }));
     });
 
     it("restores the submitted draft when pending attachment storage fails", async () => {
@@ -688,8 +695,18 @@ describe("usePiAgent turn activity", () => {
 
         // 首轮成功：发送被接受时起表，首个 text delta 结算一条 TTFB。
         runPrompt = () => {
+            const startMessage = {
+                role: "assistant",
+                content: [],
+                api: "openai-responses",
+                provider: "openai",
+                model: "test-model",
+                usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } },
+                stopReason: "stop",
+                timestamp: 1_000,
+            };
             emit?.({ type: "agent_start" });
-            emit?.({ type: "message_start", message: { role: "assistant", content: [] } } as PiAgentEvent);
+            emit?.({ type: "message_start", message: startMessage } as PiAgentEvent);
             textDelta("首个 token");
             emit?.({ type: "agent_end", messages: [] });
         };

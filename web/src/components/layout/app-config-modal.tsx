@@ -96,9 +96,9 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
     const config = useConfigStore((state) => state.config);
     const sources = useAiSourceStore();
     const connection = useChatGptStore();
-    const managed = sources.preferences.selections.agent;
+    const chatgptSelection = sources.preferences.selections.agent;
     const chatgptOptions = connection.models.map((model, index) => ({ value: `chatgpt-option-${index}`, label: `${t("aiSources.chatgpt")} · ${model.name}`, modelId: model.id }));
-    const selectedChatgpt = managed?.source === "chatgpt" ? chatgptOptions.find(option => option.modelId === managed.modelId) : undefined;
+    const selectedChatgpt = chatgptSelection ? chatgptOptions.find(option => option.modelId === chatgptSelection.modelId) : undefined;
     useEffect(() => { void sources.hydrate().catch(() => undefined); }, [sources.hydrate]);
     const changeAgentModel = async (value: string) => {
         try {
@@ -276,10 +276,10 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
                 <div className="mb-2 text-sm font-semibold">{t("config.preferences.agent")}</div>
                 <div className="mb-6 grid gap-5 md:grid-cols-2">
                     <SettingRow label={t("config.preferences.agentModel")}>
-                        <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={managed ? selectedChatgpt?.value || "managed-unavailable" : config.agentModel} currentLabel={managed ? selectedChatgpt?.label || `${t(managed.source === "chatgpt" ? "aiSources.chatgpt" : "aiSources.platform")} · ${managed.modelId} (${t("aiSources.unavailable")})` : undefined} extraOptions={chatgptOptions} disabled={sources.status !== "ready" || sources.applying} onChange={value => void changeAgentModel(value)} capability="text" purpose="agent" fullWidth />
-                        {managed && <Button variant="link" size="sm" className="mt-1 h-auto px-0" onClick={() => void changeAgentModel(config.agentModel)}>{t("aiSources.useByok")}</Button>}
+                        <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={chatgptSelection ? selectedChatgpt?.value || "chatgpt-unavailable" : config.agentModel} currentLabel={chatgptSelection && !selectedChatgpt ? `${t("aiSources.chatgpt")} · ${chatgptSelection.modelId} (${t("aiSources.unavailable")})` : selectedChatgpt?.label} extraOptions={chatgptOptions} disabled={sources.status !== "ready" || sources.applying} onChange={value => void changeAgentModel(value)} capability="text" purpose="agent" fullWidth />
+                        {chatgptSelection && <Button variant="link" size="sm" className="mt-1 h-auto px-0" onClick={() => void changeAgentModel(config.agentModel)}>{t("aiSources.useByok")}</Button>}
                     </SettingRow>
-                    {!managed && (
+                    {!chatgptSelection && (
                         <SettingRow label={t("config.preferences.agentApi")} hint={t("config.preferences.agentApiDescription")}>
                             <Select value={config.agentApiMode} onValueChange={(value) => updateConfig("agentApiMode", value as AgentApiMode)}>
                                 <SelectTrigger className="w-full">
@@ -316,7 +316,7 @@ export function AppConfigPanel({ initialTab = "channels", memoryGuardRef }: { in
                 <div className="mb-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                     {modelGroups.map((group) => (
                         <SettingRow key={group.modelKey} label={t(group.labelKey)}>
-                            <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={config[group.modelKey]} currentLabel={sources.preferences.selections[group.capability] ? `${t("aiSources.platform")} · ${t("aiSources.unavailable")}` : undefined} disabled={sources.status !== "ready" || sources.applying} onChange={(model) => { void sources.select(group.capability, null).then(() => updateConfig(group.modelKey, model)).catch(() => message.error(t("aiSources.preferencesFailed"))); }} capability={group.capability} fullWidth />
+                            <ModelPicker config={config} className="rounded-lg shadow-none dark:bg-input/30 dark:hover:bg-input/50" value={config[group.modelKey]} disabled={sources.status !== "ready" || sources.applying} onChange={(model) => { void sources.select(group.capability, null).then(() => updateConfig(group.modelKey, model)).catch(() => message.error(t("aiSources.preferencesFailed"))); }} capability={group.capability} fullWidth />
                         </SettingRow>
                     ))}
                 </div>

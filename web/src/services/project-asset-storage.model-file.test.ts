@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
+// jsdom 30 + vitest 的 createObjectURL 兼容垫片处理 jsdom Blob 时崩溃（读不到内部 _buffer）。
+// mediaMetadataOf 仅用 blob URL 读取音视频元数据，glb 两者皆非、立即返回空元数据，桩掉 URL 编解码即可。
+vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-media");
+vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+
 const uploadMediaFile = vi.hoisted(() => vi.fn(async () => ({ url: "blob:idb", storageKey: "glb:x", bytes: 4, mimeType: "model/gltf-binary" })));
 vi.mock("@/services/file-storage", () => ({ uploadMediaFile, getMediaBlob: vi.fn(), setMediaBlob: vi.fn(), readVideoMeta: vi.fn(), readAudioMeta: vi.fn(), resolveMediaUrl: vi.fn() }));
 vi.mock("@/services/image-storage", () => ({ uploadImage: vi.fn(), resolveImageUrl: vi.fn(), getImageBlob: vi.fn(), loadImageMeta: vi.fn(), setImageBlob: vi.fn() }));

@@ -138,8 +138,6 @@ const zhCN = {
     aiSources: {
     "services": "AI 服务",
     "chatgpt": "ChatGPT 订阅",
-    "platform": "shotshot 官方",
-    "platformUnavailable": "官方订阅尚未接入此版本",
     "chatgptDescription": "通过 OpenAI 授权连接你自己的 ChatGPT 账户，用于画布 Agent。额度与可用模型由 OpenAI 决定，登录后请在偏好设置中选择 ChatGPT Agent 模型，然后直接让 Agent 使用 GPT Image 2 生图或编辑图片。",
     "desktopOnly": "请在 shotshot 桌面应用中连接 ChatGPT。",
     "connect": "登录 ChatGPT",
@@ -589,7 +587,7 @@ const zhCN = {
             confirmationConfiguration: '原任务的服务配置已变更，暂时无法确认。任务：{{taskId}}',
             retryResult: '重新获取结果',
             retryResultHint: '使用原任务 ID 重新查询结果，最多等待 5 分钟，不会重新提交生成。',
-            delivering: "结果入库中", settling: "结算中", downloading: "下载结果中", saving: "保存到本地", deliveryBlocked: "结果交付已暂停（{{code}}）。点击重试结果以恢复原任务。", errorUpstreamFailed: "上游生成失败", errorRejectedBeforeSubmit: "请求在提交前被上游拒绝（未提交生成）", errorDeliveryFailed: "结果交付失败，可点击重试结果恢复", retryUnavailable: '任务暂时无法重新查询，请稍后重试。', submitting: "正在提交", queued: "已排队", running: "生成中", waitingNetwork: "网络异常，等待重试", waitingConfiguration: "等待恢复模型配置", elapsed: "已用时 {{seconds}} 秒", progress: "{{progress}}%", timedOut: "任务已超时，本地已停止跟踪；提供方可能仍会继续执行", interrupted: "任务已停止，提供方可能仍会继续执行", submissionUnknown: "提交结果未知，请前往提供方确认。为避免重复计费未自动重试", submissionUnknownRetryable: "网络中断，提交结果未知。点击重新获取结果可安全重试（不会重复计费）", failed: "远端任务失败", invalidScripts: "远端任务提交脚本和查询脚本不能为空", invalidTimeout: "远端任务超时时间无效", initialPersistFailed: "本地任务保存失败：{{message}}", remoteIdPersistFailed: "远端任务已提交，但本地保存失败：{{message}}。提供方可能仍会继续执行" },
+            delivering: "结果入库中", downloading: "下载结果中", saving: "保存到本地", deliveryBlocked: "结果交付已暂停（{{code}}）。点击重试结果以恢复原任务。", errorUpstreamFailed: "上游生成失败", errorRejectedBeforeSubmit: "请求在提交前被上游拒绝（未提交生成）", errorDeliveryFailed: "结果交付失败，可点击重试结果恢复", retryUnavailable: '任务暂时无法重新查询，请稍后重试。', submitting: "正在提交", queued: "已排队", running: "生成中", waitingNetwork: "网络异常，等待重试", waitingConfiguration: "等待恢复模型配置", elapsed: "已用时 {{seconds}} 秒", progress: "{{progress}}%", timedOut: "任务已超时，本地已停止跟踪；提供方可能仍会继续执行", interrupted: "任务已停止，提供方可能仍会继续执行", submissionUnknown: "提交结果未知，请前往提供方确认。为避免重复计费未自动重试", submissionUnknownRetryable: "网络中断，提交结果未知。点击重新获取结果可安全重试（不会重复计费）", failed: "远端任务失败", invalidScripts: "远端任务提交脚本和查询脚本不能为空", invalidTimeout: "远端任务超时时间无效", initialPersistFailed: "本地任务保存失败：{{message}}", remoteIdPersistFailed: "远端任务已提交，但本地保存失败：{{message}}。提供方可能仍会继续执行" },
         agentOps: { add_node: "新增节点", update_node: "更新节点", delete_node: "删除节点", delete_connections: "删除连线", connect_nodes: "连接", set_viewport: "调整视图", select_nodes: "选择节点", run_generation: "触发生成" },
         pluginErrors: { invalidExport: "插件未导出有效对象", missingFields: "插件缺少 id 或 nodes", downloadFailed: "下载失败 (HTTP {{status}})" },
         shortcut: {

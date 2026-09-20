@@ -213,11 +213,11 @@ describe("hydrateCanvasImages 3d branch", () => {
 });
 
 describe("imageModeSourceNodeTransform 保留 scriptEntityRef", () => {
-    const rootNode = { position: { x: 0, y: 0 }, width: 100, height: 100, title: "模板", metadata: { prompt: "p", status: "loading" as const } };
+    const rootNode = { id: "root", type: "image", position: { x: 0, y: 0 }, width: 100, height: 100, title: "模板", metadata: { prompt: "p", status: "loading" as const } };
     it("isEmptyImageNode 展开模板后不清除 scriptEntityRef（槽位回写依赖）", () => {
-        const node = { id: "n1", type: "image", title: "t", position: { x: 0, y: 0 }, width: 1, height: 1, metadata: { scriptEntityRef: { entityId: "e1", slot: "sheet" } } };
+        const node = { id: "n1", type: "image", title: "t", position: { x: 0, y: 0 }, width: 1, height: 1, metadata: { scriptEntityRef: { entityId: "e1", refId: "r1", slot: "sheet" } } };
         const out = imageModeSourceNodeTransform(node, { isConfigNode: false, isEmptyImageNode: true, isImageNode: true, rootNode, prompt: "p", parentConfig: { width: 1, height: 1 } });
-        expect(out.metadata?.scriptEntityRef).toEqual({ entityId: "e1", slot: "sheet" });
+        expect(out.metadata?.scriptEntityRef).toEqual({ entityId: "e1", refId: "r1", slot: "sheet" });
     });
     it("无 ref 时行为不变", () => {
         const node = { id: "n2", type: "image", title: "t", position: { x: 0, y: 0 }, width: 1, height: 1, metadata: { prompt: "x" } };

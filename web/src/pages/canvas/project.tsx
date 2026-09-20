@@ -4111,7 +4111,7 @@ function ShotshotPage() {
                                 const from = nodeById.get(edge.fromNodeId);
                                 const to = nodeById.get(edge.toNodeId);
                                 if (!from || !to) return null;
-                                return <ConnectionPath key={edge.id} connection={edge} from={from} to={to} active={false} derived />;
+                                return <ConnectionPath key={edge.id} connection={edge} from={from} to={to} active={false} derived onSelect={() => {}} />;
                             });
                         })()}
                         {connectingParams ? <ActiveConnectionPath node={nodeById.get(connectingParams.nodeId)} handle={connectingParams} mouseWorld={mouseWorld} target={connectionTargetNodeId ? nodeById.get(connectionTargetNodeId) : undefined} /> : null}
@@ -4248,12 +4248,12 @@ function ShotshotPage() {
                             void captureVideoNodeFrame(contextMenu.nodeId, position);
                         }}
                         onView={() => {
-                            if (contextMenu.type !== "node") return;
+                            if (contextMenu.type !== "node" || !contextMenuNode) return;
                             handleNodeViewImage(contextMenuNode);
                             setContextMenu(null);
                         }}
                         onDownload={() => {
-                            if (contextMenu.type !== "node") return;
+                            if (contextMenu.type !== "node" || !contextMenuNode) return;
                             downloadNodeImage(contextMenuNode);
                             setContextMenu(null);
                         }}
@@ -4265,7 +4265,7 @@ function ShotshotPage() {
                         onDelete={() => {
                             if (contextMenu.type === "node") {
                                 deleteNodes(new Set([contextMenu.nodeId]));
-                            } else {
+                            } else if (contextMenu.type === "connection") {
                                 deleteConnection(contextMenu.connectionId);
                             }
                             setContextMenu(null);

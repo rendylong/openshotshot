@@ -16,10 +16,10 @@ export function parseAiSourcePreferences(raw: unknown): AiSourcePreferences {
         if (!capabilities.has(key) || !item || typeof item !== "object" || Array.isArray(item)) return fail();
         const selection = item as Record<string, unknown>;
         if (Object.keys(selection).some(k => !["source", "modelId"].includes(k)) ||
-            !["platform", "chatgpt"].includes(String(selection.source)) ||
+            String(selection.source) !== "chatgpt" ||
             (selection.source === "chatgpt" && key !== "agent") ||
             typeof selection.modelId !== "string" || !selection.modelId.trim()) return fail();
-        result.selections[key as AiCapability] = {source: selection.source as "platform" | "chatgpt", modelId: selection.modelId};
+        result.selections[key as AiCapability] = {source: selection.source as "chatgpt", modelId: selection.modelId};
     }
     return result;
 }

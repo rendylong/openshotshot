@@ -3,7 +3,7 @@ import type { ProjectAssetSource } from "@/lib/project-assets/project-asset-type
 import type { MediaTaskQueryResult } from "@/services/api/media-adapters/types";
 
 export type RemoteMediaCapability = "image" | "video" | "audio";
-export type RemoteTaskPhase = "queued" | "running" | "delivering" | "settling" | "downloading" | "saving";
+export type RemoteTaskPhase = "queued" | "running" | "delivering" | "downloading" | "saving";
 export type RemoteTaskSubmitResult = { taskId: string };
 export type RemoteTaskQueryResult =
     | { status: "pending"; phase?: RemoteTaskPhase; progress?: number }
@@ -126,7 +126,7 @@ export function isRemoteMediaTask(value: unknown): value is RemoteMediaTask {
         && (adapterProtocol || legacyProtocol)
         && (task.outputFormat === undefined || typeof task.outputFormat === "string")
         && REMOTE_MEDIA_TASK_STATUSES.includes(task.status as RemoteMediaTaskStatus)
-        && (task.phase === undefined || ["queued", "running", "delivering", "settling", "downloading", "saving"].includes(task.phase as string))
+        && (task.phase === undefined || ["queued", "running", "delivering", "downloading", "saving"].includes(task.phase as string))
         && (task.progress === undefined || (typeof task.progress === "number" && Number.isFinite(task.progress)))
         && typeof task.submittedAt === "number" && Number.isFinite(task.submittedAt)
         && typeof task.deadlineAt === "number" && Number.isFinite(task.deadlineAt) && task.deadlineAt > task.submittedAt

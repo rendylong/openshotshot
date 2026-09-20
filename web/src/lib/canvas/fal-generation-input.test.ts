@@ -58,6 +58,10 @@ describe("exact endpoint material constraints", () => {
     function actualImage(width: number, height: number, mime = "image/png", bytes = 100) {
         const blob = new Blob([new Uint8Array(bytes)], { type: mime });
         const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: true, blob: async () => blob } as Response);
+        // jsdom 30 + vitest 的 createObjectURL 兼容垫片无法处理 jsdom Blob（读不到内部 _buffer），
+        // 被测代码只需要一个可撤销的 URL 字符串喂给下面已打桩的 Image，故桩掉 URL 编解码。
+        vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:mock-image");
+        vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
         vi.stubGlobal("Image", class { naturalWidth = width; naturalHeight = height; onload: (() => void) | null = null; onerror: (() => void) | null = null; set src(_value: string) { queueMicrotask(() => this.onload?.()); } });
         return fetchMock;
     }

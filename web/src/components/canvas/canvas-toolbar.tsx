@@ -75,7 +75,7 @@ export function CanvasToolbar({
                     id="tool-add"
                     label={t("canvas.toolbar.add")}
                     active={createOpen}
-                    hovered={hovered && !createOpen && !extensionsOpen}
+                    hovered={hovered && !createOpen && !extensionsOpen ? hovered : null}
                     activeStyle={activeStyle}
                     hoverStyle={hoverStyle}
                     wrapRef={wrapRef}
@@ -94,7 +94,7 @@ export function CanvasToolbar({
                         id="tool-extensions"
                         label={t("canvas.toolbar.extensions")}
                         active={extensionsOpen}
-                        hovered={hovered && !createOpen && !extensionsOpen}
+                        hovered={hovered && !createOpen && !extensionsOpen ? hovered : null}
                         activeStyle={activeStyle}
                         hoverStyle={hoverStyle}
                         wrapRef={wrapRef}
