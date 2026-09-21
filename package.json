@@ -11,7 +11,7 @@
     "build:web": "cd web && npm run build",
     "build:web:desktop": "cd web && VITE_BASE=./ npm run build",
     "dist": "node scripts/clean-package-output.mjs && npm run build:web:desktop && electron-vite build && electron-builder --mac && npm run verify:packaging-brand",
-    "pack": "npm run build:web:desktop && electron-vite build && electron-builder --dir -c.mac.identity=rendylong -c.mac.timestamp=none -c.forceCodeSigning=true",
+    "pack": "npm run build:web:desktop && electron-vite build && electron-builder --dir",
     "verify:packaging-brand": "node scripts/verify-packaged-brand.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
