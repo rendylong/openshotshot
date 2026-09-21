@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach } from "vitest";
+import { afterAll, afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
 
 // RTL auto-cleanup relies on a global afterEach, which Vitest does not expose
@@ -8,14 +8,39 @@ import { cleanup } from "@testing-library/react";
 afterEach(async () => {
     cleanup();
     parkFocus();
-    // React 19's scheduler may still hold concurrent render work on the
-    // macrotask queue when a test file finishes. If that work fires after
-    // vitest swaps out the jsdom environment, react-dom touches a dead
-    // `window` and the whole run dies with an unhandled "window is not
-    // defined" (timing flake, observed on slow CI runners). Drain the queue
-    // while the environment is still alive.
-    await new Promise((resolve) => setImmediate(resolve));
+    await drainScheduler();
 });
+
+// Final net: drain again after the file's last test, right before vitest
+// swaps out the jsdom environment.
+afterAll(async () => {
+    await drainScheduler();
+});
+
+// React 19's scheduler may still hold concurrent render work when a test
+// finishes. If that work fires after vitest swaps out the jsdom environment,
+// react-dom touches a dead `window` and the whole run dies with an unhandled
+// "window is not defined" (timing flake on slow CI runners). Drain several
+// macrotask generations — setImmediate, timers and MessageChannel ports
+// (React's scheduler uses all three) — while the environment is still alive.
+async function drainScheduler() {
+    for (let round = 0; round < 4; round++) {
+        await new Promise((resolve) => setImmediate(resolve));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        await new Promise((resolve) => {
+            if (typeof MessageChannel !== "undefined") {
+                const channel = new MessageChannel();
+                channel.port1.onmessage = () => {
+                    channel.port1.close();
+                    resolve(null);
+                };
+                channel.port2.postMessage(0);
+            } else {
+                setTimeout(resolve, 0);
+            }
+        });
+    }
+}
 
 // jsdom 30 focus fixup: when the focused element leaves the DOM during cleanup,
 // jsdom re-targets its internal focus onto the Document (Node-impl
