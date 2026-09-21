@@ -12,6 +12,10 @@
   <img src="assets/screenshot-home.png" alt="OpenShotShot — 首页" width="800" />
 </p>
 
+<p align="center">
+  <img src="assets/screenshot-canvas.png" alt="OpenShotShot — 画布与节点连线" width="800" />
+</p>
+
 ---
 
 ## 核心功能

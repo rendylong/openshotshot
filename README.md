@@ -12,6 +12,10 @@
   <img src="assets/screenshot-home.png" alt="OpenShotShot — home" width="800" />
 </p>
 
+<p align="center">
+  <img src="assets/screenshot-canvas.png" alt="OpenShotShot — canvas with connected nodes" width="800" />
+</p>
+
 ---
 
 ## Core Features
