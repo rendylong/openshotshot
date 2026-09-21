@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { promises as fs } from "node:fs";
 import { join, resolve, sep } from "node:path";
 
@@ -14,7 +15,12 @@ export type SkillsFs = {
     seed(): Promise<{ ok: boolean; error?: string }>;
 };
 
-type TargetReservation = { path: string; dev: bigint; ino: bigint };
+type TargetReservation = { path: string; dev: bigint; ino: bigint; token: string };
+
+// 目录内凭证：Linux 会在删除后立即复用 inode，仅靠 dev/ino 判断所有权会把
+// 并发方新建的同名目录误认为本请求所有而误删；marker 文件与随机 token 提供
+// 平台无关的所有权证明。
+const RESERVE_MARKER = ".skill-fs-reserve";
 
 const targetMutationQueues = new Map<string, Promise<void>>();
 
@@ -45,16 +51,23 @@ export function createSkillsFs(root: string, bundledSkills?: Record<string, stri
             await fs.mkdir(dir);
             const info = await fs.lstat(dir, { bigint: true });
             if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("reserved Skill target is not a directory");
-            return { path: dir, dev: info.dev, ino: info.ino };
+            const token = randomUUID();
+            await fs.writeFile(join(dir, RESERVE_MARKER), token, "utf8");
+            return { path: dir, dev: info.dev, ino: info.ino, token };
         } catch (error) {
             if ((error as NodeJS.ErrnoException).code === "EEXIST") return null;
             throw error;
         }
     };
+    const releaseReservation = async (reservation: TargetReservation): Promise<void> => {
+        await fs.rm(join(reservation.path, RESERVE_MARKER), { force: true });
+    };
     const cleanupReservation = async (reservation: TargetReservation): Promise<void> => {
         try {
             const current = await fs.lstat(reservation.path, { bigint: true });
             if (!current.isDirectory() || current.isSymbolicLink() || current.dev !== reservation.dev || current.ino !== reservation.ino) return;
+            const marker = await fs.readFile(join(reservation.path, RESERVE_MARKER), "utf8").catch(() => null);
+            if (marker !== reservation.token) return;
             await fs.rm(reservation.path, { recursive: true, force: true });
         } catch {
             // Missing or replaced targets are no longer owned by this request and must be preserved.
@@ -112,6 +125,7 @@ export function createSkillsFs(root: string, bundledSkills?: Record<string, stri
                     reservation = await reserveTarget(dir);
                     if (!reservation) return { ok: false, error: "skill already exists" };
                     await fs.writeFile(join(dir, "SKILL.md"), serializeSkillMarkdown(name, input), { encoding: "utf8", flag: "wx" });
+                    await releaseReservation(reservation);
                     committed = true;
                     options?.onChanged?.();
                     return { ok: true };
@@ -144,6 +158,7 @@ export function createSkillsFs(root: string, bundledSkills?: Record<string, stri
                     for (const entry of await fs.readdir(src)) {
                         await fs.cp(join(src, entry), join(target, entry), { recursive: true, force: false, errorOnExist: true });
                     }
+                    await releaseReservation(reservation);
                     committed = true;
                     options?.onChanged?.();
                     return { name: parsed.skill.name };
@@ -199,6 +214,7 @@ export function createSkillsFs(root: string, bundledSkills?: Record<string, stri
                         await fs.cp(join(sourcePath, entry), join(target, entry), { recursive: true, force: false, errorOnExist: true });
                     }
                 } else await fs.writeFile(join(target, "SKILL.md"), content, { encoding: "utf8", flag: "wx" });
+                await releaseReservation(reservation);
                 committed = true;
                 options?.onChanged?.();
                 return { ok: true };
