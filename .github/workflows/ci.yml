@@ -7,20 +7,30 @@ on:
 jobs:
   web:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
+    env:
+      # electron 与 web 的 typecheck 互相跨包（web typecheck 引 ../electron，根 tsc 引 web/src），
+      # 因此两个 job 都必须安装两套依赖；web job 不需要 electron 二进制。
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
+          cache-dependency-path: |
+            web/package-lock.json
+            package-lock.json
+      - name: Install root dependencies (electron types)
+        run: npm ci
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
       - run: npm run typecheck
+        working-directory: web
       - run: npm run test
+        working-directory: web
       - run: npm run build
+        working-directory: web
   desktop:
     runs-on: ubuntu-latest
     env:
@@ -32,8 +42,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+      - name: Install root dependencies
+        run: npm ci
+      - name: Install web dependencies (web/src types pulled in by root typecheck)
+        working-directory: web
+        run: npm ci
       - run: npx tsc --noEmit
       - run: npx vitest run
       - run: npx electron-vite build
