@@ -6,20 +6,22 @@
 
 <p align="center">OpenShotShot — an open-source AIGC creative workspace. Infinite canvas with a built-in Agent.</p>
 
+<p align="center"><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
+
 ---
 
-## 核心功能
+## Core Features
 
-- **无限画布**：图片、文本、视频、音频、3D 模型等多类型节点自由摆放、缩放与连线，把单次生成变成连续推演。
-- **内置画布 Agent**：本地运行的智能体能读懂画布上下文，直接生成节点、整理布局、串联工作流。
-- **BYOK 多模态生成**：使用自己的 API Key，通过 OpenAI 兼容渠道或内置预设（DeepSeek、Moonshot、MiniMax、智谱、OpenRouter、fal.ai 等）生成图片、视频、音频与 3D 内容。
-- **ChatGPT 订阅连接**：桌面端可用 ChatGPT 订阅账号直接登录调用模型，无需单独申请 API Key。
-- **Skills 与节点插件**：本地 Skills 扩展 Agent 能力，画布节点插件扩展画布节点类型。
-- **本地优先**：画布与素材默认保存在本机，可选 WebDAV 同步；素材库与提示词库帮你沉淀每一次好结果。
+- **Infinite canvas**: image, text, video, audio, 3D model and other node types can be freely placed, scaled and connected — turning one-shot generation into continuous iteration.
+- **Built-in canvas agent**: a locally running agent that understands canvas context and directly generates nodes, organizes layouts and chains workflows.
+- **BYOK multimodal generation**: use your own API key over OpenAI-compatible channels or built-in presets (DeepSeek, Moonshot, MiniMax, Zhipu, OpenRouter, fal.ai, etc.) to generate images, videos, audio and 3D content.
+- **ChatGPT subscription connection**: on desktop, sign in with a ChatGPT subscription and call models directly — no separate API key required.
+- **Skills & node plugins**: local Skills extend the agent's capabilities; canvas node plugins extend node types.
+- **Local-first**: canvases and assets are stored on your machine by default with optional WebDAV sync; asset & prompt libraries help you keep every good result.
 
-## 快速开始
+## Quick Start
 
-要求：Node.js 22+。
+Requires Node.js 22+.
 
 ```bash
 git clone https://github.com/rendylong/openshotshot.git
@@ -34,21 +36,21 @@ npm install
 npm run dev
 ```
 
-浏览器打开 <http://localhost:3000>。
+Open <http://localhost:3000> in your browser.
 
-### 桌面端（Electron）
+### Desktop (Electron)
 
-需要两个终端，先启动 Web 渲染端，再启动桌面端：
+Two terminals are needed: start the web renderer first, then the desktop app.
 
 ```bash
-# 终端 1：Web 渲染端
+# Terminal 1: web renderer
 cd web
 npm install
 npm run dev
 ```
 
 ```bash
-# 终端 2：桌面端（仓库根目录）
+# Terminal 2: desktop app (repo root)
 npm install
 npm run dev
 ```
@@ -59,19 +61,19 @@ npm run dev
 docker compose up --build
 ```
 
-构建本地镜像并启动，打开 <http://localhost:3000>。容器只提供静态页面，AI 请求由浏览器直连你配置的服务商接口。
+This builds a local image and starts it; open <http://localhost:3000>. The container only serves static pages — AI requests go directly from your browser to the provider you configure.
 
-## BYOK 说明
+## BYOK
 
-打开「模型与 API 配置」，添加一个 OpenAI 兼容渠道（Base URL + API Key），或从预设列表选择服务商。API Key 只保存在你的设备本地：浏览器直连你所配置的接口，Electron 桌面端在需要时由主进程代理跨域请求。本项目没有经手你的 Key 或生成数据的远程服务器。
+Open **Model & API settings**, add an OpenAI-compatible channel (Base URL + API Key), or pick a provider from the preset list. API keys are stored only on your device: the browser connects directly to the endpoint you configure, and the Electron desktop app proxies cross-origin requests through its main process when needed. There is no remote server of ours that touches your keys or your generated data.
 
-## 重要提示
+## Important Notes
 
-- 本地数据格式仍在快速演进，暂不保证向后兼容，请勿把唯一一份重要数据存放在应用内。
-- API Key 仅保存在本地浏览器或桌面端存储中，请注意设备安全。
+- Local data formats are still evolving and backward compatibility is not guaranteed yet — do not keep the only copy of important data inside the app.
+- API keys are stored only in local browser or desktop storage; keep your device secure.
 
-## 开源与致谢
+## License & Acknowledgements
 
-OpenShotShot 基于 [infinite-canvas](https://github.com/basketikun/infinite-canvas) 二次开发，并在其基础上持续演进产品体验、桌面端、本地 Agent、Skills 与插件能力。感谢原项目及所有开源依赖的贡献者。
+OpenShotShot is based on [infinite-canvas](https://github.com/basketikun/infinite-canvas) and continuously evolves on top of it — product experience, desktop app, local agent, skills and plugin capabilities. Thanks to the original project and all contributors of the open-source dependencies.
 
-本项目遵循 [MIT License](LICENSE)。使用、修改或分发时请保留许可证中的版权与许可声明。
+Released under the [MIT License](LICENSE). When using, modifying or redistributing, please keep the copyright and permission notices in the license.
