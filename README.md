@@ -8,6 +8,10 @@
 
 <p align="center"><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
 
+<p align="center">
+  <img src="assets/screenshot-home.png" alt="OpenShotShot — home" width="800" />
+</p>
+
 ---
 
 ## Core Features
