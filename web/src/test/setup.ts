@@ -5,9 +5,16 @@ import { cleanup } from "@testing-library/react";
 // RTL auto-cleanup relies on a global afterEach, which Vitest does not expose
 // unless `globals` is enabled. Register it explicitly so each render is torn
 // down and DOM does not leak across tests in the same file.
-afterEach(() => {
+afterEach(async () => {
     cleanup();
     parkFocus();
+    // React 19's scheduler may still hold concurrent render work on the
+    // macrotask queue when a test file finishes. If that work fires after
+    // vitest swaps out the jsdom environment, react-dom touches a dead
+    // `window` and the whole run dies with an unhandled "window is not
+    // defined" (timing flake, observed on slow CI runners). Drain the queue
+    // while the environment is still alive.
+    await new Promise((resolve) => setImmediate(resolve));
 });
 
 // jsdom 30 focus fixup: when the focused element leaves the DOM during cleanup,
