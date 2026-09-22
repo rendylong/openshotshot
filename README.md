@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="assets/shotshot-logo-text.png" alt="OpenShotShot" width="420" />
+  <img src="assets/shotshot-logo-text.png" alt="shotshot" width="420" />
 </p>
 
-<h1 align="center">OpenShotShot</h1>
+<h1 align="center">ShotShot</h1>
 
-<p align="center">OpenShotShot — an open-source AIGC creative workspace. Infinite canvas with a built-in Agent.</p>
+<p align="center">ShotShot — an open-source AIGC creative workspace. Infinite canvas with a built-in Agent.</p>
 
 <p align="center"><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
 
 <p align="center">
-  <img src="assets/screenshot-home.png" alt="OpenShotShot — home" width="800" />
+  <img src="assets/screenshot-home.png" alt="shotshot — home" width="800" />
 </p>
 
 <p align="center">
-  <img src="assets/screenshot-canvas.png" alt="OpenShotShot — canvas with connected nodes" width="800" />
+  <img src="assets/screenshot-canvas.png" alt="shotshot — canvas with connected nodes" width="800" />
 </p>
 
 ---
@@ -32,8 +32,8 @@
 Requires Node.js 22+.
 
 ```bash
-git clone https://github.com/rendylong/openshotshot.git
-cd openshotshot
+git clone https://github.com/rendylong/shotshot.git
+cd shotshot
 ```
 
 ### Web
@@ -82,6 +82,6 @@ Open **Model & API settings**, add an OpenAI-compatible channel (Base URL + API 
 
 ## License & Acknowledgements
 
-OpenShotShot is based on [infinite-canvas](https://github.com/basketikun/infinite-canvas) and continuously evolves on top of it — product experience, desktop app, local agent, skills and plugin capabilities. Thanks to the original project and all contributors of the open-source dependencies.
+shotshot is based on [infinite-canvas](https://github.com/basketikun/infinite-canvas) and continuously evolves on top of it — product experience, desktop app, local agent, skills and plugin capabilities. Thanks to the original project and all contributors of the open-source dependencies.
 
 Released under the [MIT License](LICENSE). When using, modifying or redistributing, please keep the copyright and permission notices in the license.
