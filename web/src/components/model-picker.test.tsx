@@ -2,11 +2,19 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { App as AntApp } from "antd";
 import { I18nextProvider } from "react-i18next";
-import { beforeEach, describe, expect, it, test, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, test, vi } from "vitest";
 import i18n from "@/i18n";
 
 import { ModelPicker } from "./model-picker";
 import { createModelChannel, defaultConfig, modelOptionsFromChannels, useConfigStore } from "@/stores/use-config-store";
+
+// ModelPicker 渲染 antd Popover：rc-motion 的退场动画与图层清理走真实定时器
+// （150–300ms 级），在慢 CI 上可能晚于 vitest 的 jsdom 环境销毁才触发，
+// react-dom 触碰已销毁的 window 会让整个 run 以 unhandled error 判红。
+// 在文件结束、环境仍存活时让这些定时器烧完。
+afterAll(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+});
 
 const config = {
     ...defaultConfig,
