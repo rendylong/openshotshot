@@ -1,19 +1,19 @@
 <p align="center">
-  <img src="assets/shotshot-logo-text.png" alt="OpenShotShot" width="420" />
+  <img src="assets/shotshot-logo-text.png" alt="ShotShot" width="420" />
 </p>
 
-<h1 align="center">OpenShotShot</h1>
+<h1 align="center">ShotShot</h1>
 
-<p align="center">OpenShotShot — 一个开源的 AIGC 创作工作台：无限画布，内置 Agent。</p>
+<p align="center">ShotShot — 一个开源的 AIGC 创作工作台：无限画布，内置 Agent。</p>
 
 <p align="center"><a href="./README.md">English</a> | <a href="./README.zh-CN.md">简体中文</a></p>
 
 <p align="center">
-  <img src="assets/screenshot-home.png" alt="OpenShotShot — 首页" width="800" />
+  <img src="assets/screenshot-home.png" alt="ShotShot — 首页" width="800" />
 </p>
 
 <p align="center">
-  <img src="assets/screenshot-canvas.png" alt="OpenShotShot — 画布与节点连线" width="800" />
+  <img src="assets/screenshot-canvas.png" alt="ShotShot — 画布与节点连线" width="800" />
 </p>
 
 ---
@@ -82,6 +82,6 @@ docker compose up --build
 
 ## 开源与致谢
 
-OpenShotShot 基于 [infinite-canvas](https://github.com/basketikun/infinite-canvas) 二次开发，并在其基础上持续演进产品体验、桌面端、本地 Agent、Skills 与插件能力。感谢原项目及所有开源依赖的贡献者。
+ShotShot 基于 [infinite-canvas](https://github.com/basketikun/infinite-canvas) 二次开发，并在其基础上持续演进产品体验、桌面端、本地 Agent、Skills 与插件能力。感谢原项目及所有开源依赖的贡献者。
 
 本项目遵循 [MIT License](LICENSE)。使用、修改或分发时请保留许可证中的版权与许可声明。
