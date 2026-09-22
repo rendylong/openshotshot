@@ -32,8 +32,8 @@
 要求：Node.js 22+。
 
 ```bash
-git clone https://github.com/rendylong/openshotshot.git
-cd openshotshot
+git clone https://github.com/rendylong/shotshot.ai.git
+cd shotshot.ai
 ```
 
 ### Web

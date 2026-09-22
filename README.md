@@ -32,8 +32,8 @@
 Requires Node.js 22+.
 
 ```bash
-git clone https://github.com/rendylong/shotshot.git
-cd shotshot
+git clone https://github.com/rendylong/shotshot.ai.git
+cd shotshot.ai
 ```
 
 ### Web

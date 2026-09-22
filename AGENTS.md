@@ -4,7 +4,7 @@
 
 ## 项目基线
 
-- 开源项目名与对外名称统一使用 **OpenShotShot**，产品名与技术命名空间统一使用 `shotshot`；仓库地址为 `https://github.com/rendylong/openshotshot`（代码内以 `REPO_URL` 常量为准）。不得新增其他品牌名、旧域名或旧仓库地址。
+- 开源项目名与对外名称统一使用 **OpenShotShot**，产品名与技术命名空间统一使用 `shotshot`；仓库地址为 `https://github.com/rendylong/shotshot.ai`（代码内以 `REPO_URL` 常量为准）。不得新增其他品牌名、旧域名或旧仓库地址。
 - 项目是本地优先的 AI 视觉创作工作台，包含可独立运行的 Web 渲染端和 Electron 桌面端。
 - 当前主要技术栈：Vite、React、React Router、TypeScript、Tailwind CSS、shadcn/Radix、Ant Design、Zustand、TanStack Query、assistant-ui、aicss.dev、Electron、electron-vite 和 Pi Agent。
 - `web/` 是渲染进程与独立 Web 应用；`electron/` 是桌面主进程、preload、Pi Agent 宿主、本地 Skill 与文件系统能力。不要再假设项目只有浏览器前端，也不要假设存在远程业务后端。

@@ -5,7 +5,7 @@ describe("window security policy", () => {
     test("opens only HTTPS URLs from exact allowlisted origins", () => {
         const origins = new Set(["https://example.org", "https://github.com"]);
         expect(isAllowedExternalUrl("https://example.org/account", origins)).toBe(true);
-        expect(isAllowedExternalUrl("https://github.com/rendylong/openshotshot", origins)).toBe(true);
+        expect(isAllowedExternalUrl("https://github.com/rendylong/shotshot.ai", origins)).toBe(true);
         expect(isAllowedExternalUrl("http://example.org/account", origins)).toBe(false);
         expect(isAllowedExternalUrl("https://example.org.evil.example/account", origins)).toBe(false);
         expect(isAllowedExternalUrl("https://user:secret@example.org/account", origins)).toBe(false);
